@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>App Pro Mobile & Desktop</title>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <style>
+    :root {
+      --bg-main: #0b0e14;
+      --bg-card: #151922;
+      --bg-sidebar: #12151e;
+      --accent-blue: #0084ff;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #262c3a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg-main); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    header { background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .logo-area { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; color: var(--accent-blue); }
+    .status-badge { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .status-dot { width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; box-shadow: 0 0 8px var(--accent-green); }
+
+    .app-body { display: flex; flex: 1; overflow: hidden; }
+    .stage-container { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; background: radial-gradient(circle at center, #111520 0%, #0b0e14 100%); }
+
+    .screen-stage { background: #000; border-radius: 14px; position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 50vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    .screen-stage video { width: 100%; height: 100%; object-fit: fill; image-rendering: -webkit-optimize-contrast; }
+
+    .stage-local { border: 2px solid var(--accent-green); box-shadow: 0 4px 16px rgba(34, 197, 94, 0.25); }
+    .badge-local { position: absolute; top: 10px; left: 10px; background: rgba(34, 197, 94, 0.9); color: #000; backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; z-index: 10; }
+
+    .stage-remote { border: 2px solid var(--accent-blue); box-shadow: 0 4px 16px rgba(0, 132, 255, 0.25); }
+    .badge-remote { position: absolute; top: 10px; left: 10px; background: rgba(0, 132, 255, 0.9); color: #fff; backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; z-index: 10; }
+
+    #video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%; }
+    .video-card { background: var(--bg-card); border-radius: 12px; overflow: hidden; position: relative; height: 140px; border: 1px solid var(--border-color); }
+    .video-card video { width: 100%; height: 100%; object-fit: cover; background: #05070a; }
+    .user-tag { position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+
+    .controls-wrapper { display: flex; justify-content: center; margin-top: auto; padding-top: 8px; }
+    .controls-bar { background: rgba(21, 25, 34, 0.9); backdrop-filter: blur(12px); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 40px; display: flex; gap: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); width: 100%; max-width: 450px; justify-content: space-around; }
+    .btn-ctrl { padding: 10px 14px; border-radius: 20px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #222836; color: var(--text-main); flex: 1; min-height: 44px; }
+    .btn-ctrl.primary { background: var(--accent-blue); color: #fff; }
+    .btn-ctrl.active-red { background: var(--accent-red); color: #fff; }
+
+    .sidebar { width: 320px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 14px; gap: 12px; flex-shrink: 0; }
+    .card-panel { background: var(--bg-card); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); }
+    .card-panel h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 8px; }
+    
+    input[type="text"] { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: #0b0e14; color: var(--text-main); font-size: 16px; margin-bottom: 8px; outline: none; }
+    input[type="text"]:focus { border-color: var(--accent-blue); }
+
+    .btn-block { width: 100%; padding: 10px; border-radius: 8px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer; min-height: 44px; }
+
+    .chat-section { flex: 1; display: flex; flex-direction: column; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color); padding: 10px; overflow: hidden; min-height: 180px; }
+    #chat-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+    .chat-msg { background: #0b0e14; padding: 6px 10px; border-radius: 8px; font-size: 12px; line-height: 1.4; }
+    .chat-msg b { color: var(--accent-blue); }
+    .sys-msg { font-size: 10px; color: var(--text-muted); text-align: center; margin: 2px 0; font-style: italic; }
+
+    .hidden { display: none !important; }
+
+    /* Adaptação para Celulares */
+    @media (max-width: 768px) {
+      body { overflow-y: auto; height: 100%; }
+      .app-body { flex-direction: column; overflow: visible; }
+      .sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border-color); }
+      .screen-stage { max-height: 35vh; }
+      .controls-bar { border-radius: 16px; }
+      .btn-ctrl { font-size: 11px; padding: 8px 6px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-area">
+      <span>⚡ CONNECT PRO</span>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      <span id="my-id-display">Offline</span>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <video id="local-video" autoplay muted playsinline style="display:none;"></video>
+
+    <div class="stage-container">
+      
+      <div id="local-screen-stage" class="screen-stage stage-local hidden">
+        <video id="local-screen-video" autoplay muted playsinline></video>
+        <div class="badge-local">🟢 SUA TELA</div>
+      </div>
+
+      <div id="remote-screen-stage" class="screen-stage stage-remote hidden">
+        <video id="remote-screen-video" autoplay muted playsinline></video>
+        <div class="badge-remote">🖥️ TELA DE: <span id="remote-screen-owner">ALGUÉM</span></div>
+      </div>
+
+      <div id="video-grid"></div>
+
+      <div class="controls-wrapper">
+        <div class="controls-bar">
+          <button id="btn-mic" class="btn-ctrl" onclick="alternarMicrofone()">🎙️ Mic</button>
+          <button id="btn-cam" class="btn-ctrl" onclick="alternarCamera()">📹 Cam</button>
+          <button id="btn-screen" class="btn-ctrl primary" onclick="compartilharTela()">🖥️ Tela</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div id="setup-panel" class="card-panel">
+        <h4>1. Seu Apelido</h4>
+        <input type="text" id="my-name-input" placeholder="Ex: lucas">
+        <button class="btn-block" onclick="iniciarPeer()">Entrar na Sala</button>
+      </div>
+
+      <div id="connect-panel" class="card-panel hidden">
+        <h4>2. Conectar Usuário</h4>
+        <input type="text" id="peer-id-input" placeholder="Apelido do amigo">
+        <button class="btn-block" onclick="conectarAPeer()">Chamar</button>
+      </div>
+
+      <div class="chat-section">
+        <h4 style="margin-bottom: 6px;">CHAT</h4>
+        <div id="chat-box"></div>
+        <div style="margin-top: 8px;">
+          <input type="text" id="msg-input" placeholder="Mensagem..." onkeydown="if(event.key==='Enter') enviarMensagem()">
+          <button class="btn-block" onclick="enviarMensagem()">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let peer = null;
+    let myId = '';
+    let localStream = null;
+    let screenStream = null;
+    let isScreenSharing = false;
+    let cameraEstavaAtiva = true;
+
+    const calls = {};
+    const screenCalls = {};
+    const conns = {};
+
+    async function inicializarMidia() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+          audio: { echoCancellation: true, noiseSuppression: true }
+        });
+      } catch (e) {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        } catch (err) {
+          localStream = new MediaStream();
+        }
+      }
+      
+      const localVideo = document.getElementById('local-video');
+      if (localVideo) localVideo.srcObject = localStream;
+    }
+
+    inicializarMidia();
+
+    function iniciarPeer() {
+      const inputNome = document.getElementById('my-name-input').value.trim();
+      if (!inputNome) return alert("Digite um nome!");
+
+      myId = inputNome.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      peer = new Peer(myId);
+
+      peer.on('open', id => {
+        document.getElementById('setup-panel').classList.add('hidden');
+        document.getElementById('connect-panel').classList.remove('hidden');
+        document.getElementById('my-id-display').innerText = id.toUpperCase();
+        adicionarMsgSistema(`Sessão iniciada como "${id}".`);
+      });
+
+      peer.on('error', err => {
+        if (err.type === 'unavailable-id') {
+          alert("Esse nome já está em uso!");
+        }
+      });
+
+      peer.on('connection', conn => configurarConexaoDados(conn));
+
+      peer.on('call', call => {
+        if (call.metadata && call.metadata.type === 'screen') {
+          call.answer();
+          call.on('stream', remoteScreenStream => {
+            exibirTelaRemota(call.peer, remoteScreenStream);
+          });
+          call.on('close', () => ocultarTelaRemota());
+        } else {
+          call.answer(localStream);
+          configurarChamadaVideo(call);
+        }
+      });
+    }
+
+    function conectarAPeer(targetId) {
+      const dest = targetId || document.getElementById('peer-id-input').value.trim().toLowerCase();
+      if (!dest || dest === myId || conns[dest]) return;
+
+      const conn = peer.connect(dest);
+      configurarConexaoDados(conn);
+
+      const call = peer.call(dest, localStream);
+      configurarChamadaVideo(call);
+
+      if (isScreenSharing && screenStream) {
+        enviarChamadaTela(dest);
+      }
+    }
+
+    function enviarChamadaTela(destId) {
+      const sCall = peer.call(destId, screenStream, { metadata: { type: 'screen' } });
+      screenCalls[destId] = sCall;
+      forcarBitrateMaximo(sCall, 4000);
+    }
+
+    function forcarBitrateMaximo(call, bitrateKbps) {
+      call.on('peerConnection', pc => {
+        pc.getSenders().forEach(sender => {
+          if (sender.track && sender.track.kind === 'video') {
+            const params = sender.getParameters();
+            if (!params.encodings || params.encodings.length === 0) {
+              params.encodings = [{}];
+            }
+            params.encodings[0].maxBitrate = bitrateKbps * 1000;
+            params.encodings[0].degradationPreference = 'maintain-resolution';
+            sender.setParameters(params).catch(() => {});
+          }
+        });
+      });
+    }
+
+    function configurarConexaoDados(conn) {
+      conns[conn.peer] = conn;
+
+      conn.on('open', () => {
+        adicionarMsgSistema(`"${conn.peer}" conectou-se.`);
+        conn.send({ type: 'PEER_LIST', peers: Object.keys(conns) });
+      });
+
+      conn.on('data', data => {
+        if (typeof data === 'object') {
+          if (data.type === 'PEER_LIST') {
+            data.peers.forEach(pId => {
+              if (pId !== myId && !conns[pId]) conectarAPeer(pId);
+            });
+          } else if (data.type === 'CHAT') {
+            adicionarMsgChat(data.sender, data.text);
+          } else if (data.type === 'SCREEN_STOPPED') {
+            ocultarTelaRemota();
+          }
+        }
+      });
+
+      conn.on('close', () => {
+        adicionarMsgSistema(`"${conn.peer}" desconectou.`);
+        removerVideoRemoto(conn.peer);
+        delete conns[conn.peer];
+      });
+    }
+
+    function configurarChamadaVideo(call) {
+      calls[call.peer] = call;
+
+      call.on('stream', remoteStream => {
+        adicionarVideoRemoto(call.peer, remoteStream);
+      });
+
+      call.on('close', () => {
+        removerVideoRemoto(call.peer);
+        delete calls[call.peer];
+      });
+    }
+
+    function adicionarVideoRemoto(peerId, stream) {
+      if (document.getElementById(`card-${peerId}`)) return;
+
+      const grid = document.getElementById('video-grid');
+      const card = document.createElement('div');
+      card.className = 'video-card';
+      card.id = `card-${peerId}`;
+
+      const vid = document.createElement('video');
+      vid.id = `video-${peerId}`;
+      vid.autoplay = true;
+      vid.playsinline = true;
+      vid.srcObject = stream;
+
+      const label = document.createElement('div');
+      label.className = 'user-tag';
+      label.innerText = peerId;
+
+      card.appendChild(vid);
+      card.appendChild(label);
+      grid.appendChild(card);
+    }
+
+    function removerVideoRemoto(peerId) {
+      const card = document.getElementById(`card-${peerId}`);
+      if (card) card.remove();
+    }
+
+    async function compartilharTela() {
+      if (isScreenSharing) {
+        pararCompartilhamentoTela();
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        alert("Seu navegador mobile não suporta transmitir tela, mas você pode assistir a tela de outros usuários.");
+        return;
+      }
+
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+          video: { cursor: "always" }, 
+          audio: false 
+        });
+
+        const screenTrack = screenStream.getVideoTracks()[0];
+        
+        if ('contentHint' in screenTrack) {
+          screenTrack.contentHint = 'text';
+        }
+
+        const camTrack = localStream.getVideoTracks()[0];
+        if (camTrack) {
+          cameraEstavaAtiva = camTrack.enabled;
+          camTrack.enabled = false;
+          atualizarBotaoCam(false);
+        }
+
+        for (const pId in conns) {
+          enviarChamadaTela(pId);
+        }
+
+        exibirTelaLocal(screenStream);
+
+        document.getElementById('btn-screen').innerText = '🛑 Parar';
+        document.getElementById('btn-screen').classList.add('active-red');
+        isScreenSharing = true;
+
+        screenTrack.onended = () => pararCompartilhamentoTela();
+
+      } catch (err) {
+        console.error("Erro ao compartilhar tela:", err);
+      }
+    }
+
+    function pararCompartilhamentoTela() {
+      if (!isScreenSharing) return;
+
+      for (const pId in screenCalls) {
+        if (screenCalls[pId]) screenCalls[pId].close();
+      }
+
+      if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenStream = null;
+      }
+
+      const camTrack = localStream.getVideoTracks()[0];
+      if (camTrack && cameraEstavaAtiva) {
+        camTrack.enabled = true;
+        atualizarBotaoCam(true);
+      }
+
+      ocultarTelaLocal();
+
+      document.getElementById('btn-screen').innerText = '🖥️ Tela';
+      document.getElementById('btn-screen').classList.remove('active-red');
+      isScreenSharing = false;
+
+      notificarTodos({ type: 'SCREEN_STOPPED' });
+    }
+
+    function exibirTelaLocal(stream) {
+      const stage = document.getElementById('local-screen-stage');
+      const vid = document.getElementById('local-screen-video');
+      vid.srcObject = stream;
+      stage.classList.remove('hidden');
+    }
+
+    function ocultarTelaLocal() {
+      const stage = document.getElementById('local-screen-stage');
+      const vid = document.getElementById('local-screen-video');
+      vid.srcObject = null;
+      stage.classList.add('hidden');
+    }
+
+    function exibirTelaRemota(ownerName, stream) {
+      const stage = document.getElementById('remote-screen-stage');
+      const vid = document.getElementById('remote-screen-video');
+      document.getElementById('remote-screen-owner').innerText = ownerName.toUpperCase();
+
+      vid.srcObject = stream;
+      stage.classList.remove('hidden');
+      vid.play().catch(e => console.log(e));
+    }
+
+    function ocultarTelaRemota() {
+      const stage = document.getElementById('remote-screen-stage');
+      const vid = document.getElementById('remote-screen-video');
+      vid.srcObject = null;
+      stage.classList.add('hidden');
+    }
+
+    function alternarMicrofone() {
+      const track = localStream.getAudioTracks()[0];
+      if (track) {
+        track.enabled = !track.enabled;
+        const btn = document.getElementById('btn-mic');
+        btn.innerText = track.enabled ? '🎙️ Mic' : '🔇 Off';
+        btn.classList.toggle('active-red', !track.enabled);
+      }
+    }
+
+    function alternarCamera() {
+      const track = localStream.getVideoTracks()[0];
+      if (track) {
+        track.enabled = !track.enabled;
+        cameraEstavaAtiva = track.enabled;
+        atualizarBotaoCam(track.enabled);
+      }
+    }
+
+    function atualizarBotaoCam(ativo) {
+      const btn = document.getElementById('btn-cam');
+      btn.innerText = ativo ? '📹 Cam' : '🚫 Off';
+      btn.classList.toggle('active-red', !ativo);
+    }
+
+    function enviarMensagem() {
+      const input = document.getElementById('msg-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      notificarTodos({ type: 'CHAT', sender: myId, text: text });
+      adicionarMsgChat('Você', text);
+      input.value = '';
+    }
+
+    function notificarTodos(dados) {
+      Object.values(conns).forEach(conn => conn.send(dados));
+    }
+
+    function adicionarMsgChat(autor, texto) {
+      const box = document.getElementById('chat-box');
+      box.innerHTML += `<div class="chat-msg"><b>${autor}:</b> ${texto}</div>`;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function adicionarMsgSistema(texto) {
+      const box = document.getElementById('chat-box');
+      box.innerHTML += `<div class="sys-msg">${texto}</div>`;
+      box.scrollTop = box.scrollHeight;
+    }
+  </script>
+</body>
+</html>
