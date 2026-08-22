@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ConnectRTC - Video & Screen Share</title>
-  <!-- PeerJS -->
+  <title>ConnectRTC - Video, Screen & Chat</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
@@ -35,7 +33,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px 15px;
+      padding: 15px;
     }
 
     .container {
@@ -43,36 +41,33 @@
       max-width: 1280px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 15px;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 18px 24px;
-      border-radius: 20px;
+      padding: 15px 20px;
+      border-radius: 16px;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 12px;
-      font-size: 1.25rem;
+      gap: 10px;
+      font-size: 1.2rem;
       font-weight: 700;
-      letter-spacing: -0.5px;
     }
 
-    .logo i {
-      color: var(--primary);
-    }
+    .logo i { color: var(--primary); }
 
     .status-badge {
       display: flex;
       align-items: center;
       gap: 8px;
       background: rgba(15, 23, 42, 0.6);
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 99px;
       font-size: 0.85rem;
       border: 1px solid var(--glass-border);
@@ -83,7 +78,6 @@
       height: 8px;
       border-radius: 50%;
       background: var(--danger);
-      box-shadow: 0 0 10px var(--danger);
     }
 
     .status-dot.online {
@@ -96,29 +90,28 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      border-radius: 16px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
     }
 
     .controls-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 15px;
-      padding: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      padding: 15px;
     }
 
     .control-card {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .control-card label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .input-group {
@@ -128,46 +121,36 @@
 
     input {
       flex: 1;
-      padding: 12px 16px;
-      border-radius: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
       border: 1px solid var(--glass-border);
       background: rgba(15, 23, 42, 0.7);
       color: var(--text);
-      font-size: 0.95rem;
-      transition: all 0.2s;
+      font-size: 0.9rem;
     }
 
     input:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
     }
 
     .btn {
-      padding: 12px 20px;
-      border-radius: 12px;
+      padding: 10px 16px;
+      border-radius: 10px;
       border: none;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       transition: all 0.2s ease;
       white-space: nowrap;
     }
 
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
 
     .btn-secondary {
       background: rgba(255, 255, 255, 0.08);
@@ -175,24 +158,25 @@
       border: 1px solid var(--glass-border);
     }
 
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.15);
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 15px;
     }
 
     .video-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
     }
 
     .video-card {
       position: relative;
       background: rgba(15, 23, 42, 0.9);
-      border-radius: 16px;
+      border-radius: 14px;
       overflow: hidden;
       aspect-ratio: 16 / 9;
       border: 1px solid var(--glass-border);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
     }
 
     video {
@@ -203,43 +187,90 @@
 
     .video-header {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--glass-border);
+    }
+
+    /* Chat Section */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 380px;
+      max-height: 500px;
+      padding: 15px;
+    }
+
+    .chat-header {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(8px);
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      border: 1px solid var(--glass-border);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 5px;
+      margin-bottom: 10px;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .msg.me {
+      align-self: flex-end;
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .msg.other {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .msg-author {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-bottom: 2px;
     }
 
     .media-actions {
       display: flex;
       justify-content: center;
       gap: 12px;
-      padding: 15px;
+      padding: 12px;
     }
 
     .btn-icon {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       padding: 0;
-      font-size: 1.1rem;
     }
 
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-    }
+    .btn-danger { background: var(--danger); color: white; }
 
-    @media (max-width: 768px) {
-      body { padding: 10px; }
-      .controls-grid { grid-template-columns: 1fr; }
+    @media (max-width: 900px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .chat-panel { height: 300px; }
       .input-group { flex-direction: column; }
       .btn { width: 100%; }
     }
@@ -260,9 +291,8 @@
     </header>
 
     <div class="controls-grid glass-panel">
-      <!-- Etapa 1: Registrar Nome -->
       <div class="control-card">
-        <label><i class="fa-solid fa-user"></i> 1. Seu Nome / ID</label>
+        <label><i class="fa-solid fa-user"></i> 1. Seu Nome</label>
         <div class="input-group">
           <input type="text" id="my-id-input" placeholder="Ex: joao" />
           <button class="btn btn-primary" onclick="definirMeuId()">
@@ -271,7 +301,6 @@
         </div>
       </div>
 
-      <!-- Etapa 2: Conectar ao Parceiro -->
       <div class="control-card">
         <label><i class="fa-solid fa-phone"></i> 2. Ligar para Alguém</label>
         <div class="input-group">
@@ -282,40 +311,44 @@
         </div>
       </div>
 
-      <!-- Compartilhamento de Tela -->
       <div class="control-card">
         <label><i class="fa-solid fa-desktop"></i> Transmissão de Tela</label>
         <button class="btn btn-secondary" onclick="startScreenShare()">
-          <i class="fa-solid fa-display"></i> Compartilhar Tela (PC)
+          <i class="fa-solid fa-display"></i> Compartilhar Tela
         </button>
       </div>
     </div>
 
-    <!-- Grade de Vídeos -->
-    <div class="video-grid">
-      <div class="video-card">
-        <div class="video-header">
-          <i class="fa-solid fa-camera"></i> Sua Câmera
+    <div class="main-layout">
+      <!-- Vídeos -->
+      <div class="video-grid">
+        <div class="video-card">
+          <div class="video-header"><i class="fa-solid fa-camera"></i> Sua Câmera</div>
+          <video id="localVideo" autoplay playsinline muted></video>
         </div>
-        <video id="localVideo" autoplay playsinline muted></video>
+
+        <div class="video-card">
+          <div class="video-header"><i class="fa-solid fa-user-group"></i> Câmera Remota</div>
+          <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+
+        <div class="video-card">
+          <div class="video-header"><i class="fa-solid fa-desktop"></i> Tela Remota</div>
+          <video id="remoteScreen" autoplay playsinline></video>
+        </div>
       </div>
 
-      <div class="video-card">
-        <div class="video-header">
-          <i class="fa-solid fa-user-group"></i> Câmera Remota
+      <!-- Chat -->
+      <div class="chat-panel glass-panel">
+        <div class="chat-header"><i class="fa-solid fa-comments"></i> Chat da Sala</div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="input-group">
+          <input type="text" id="chat-input" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
+          <button class="btn btn-primary" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
-        <video id="remoteVideo" autoplay playsinline></video>
-      </div>
-
-      <div class="video-card">
-        <div class="video-header">
-          <i class="fa-solid fa-desktop"></i> Tela Remota
-        </div>
-        <video id="remoteScreen" autoplay playsinline></video>
       </div>
     </div>
 
-    <!-- Controles Rápidos de Mídia -->
     <div class="media-actions glass-panel">
       <button id="toggle-mic-btn" class="btn btn-secondary btn-icon" onclick="toggleAudio()" title="Mutar Microfone">
         <i class="fa-solid fa-microphone"></i>
@@ -328,16 +361,19 @@
 
   <script>
     let peer = null;
+    let dataConn = null;
     let localStream = null;
     let screenStream = null;
     let audioEnabled = true;
     let videoEnabled = true;
+    let myRegisteredId = "";
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
     const remoteScreen = document.getElementById('remoteScreen');
     const statusText = document.getElementById('status-text');
     const statusDot = document.getElementById('status-dot');
+    const chatMessages = document.getElementById('chat-messages');
 
     async function initLocalStream() {
       try {
@@ -348,20 +384,18 @@
         localVideo.srcObject = localStream;
       } catch (err) {
         console.error('Erro ao acessar mídia:', err);
-        alert('Não foi possível acessar a câmera e o microfone.');
       }
     }
 
     function definirMeuId() {
       const meuId = document.getElementById('my-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
-      
       if (!meuId) return alert('Digite um nome ou ID válido.');
 
       if (peer) peer.destroy();
-
       peer = new Peer(meuId);
 
       peer.on('open', (id) => {
+        myRegisteredId = id;
         statusText.innerHTML = `Ativo como: <strong>${id}</strong>`;
         statusDot.classList.add('online');
       });
@@ -370,11 +404,11 @@
         if (err.type === 'unavailable-id') {
           alert('Este ID já está em uso por outra pessoa.');
         } else {
-          console.error(err);
           alert('Erro de conexão: ' + err.type);
         }
       });
 
+      // Atende chamadas de vídeo/tela
       peer.on('call', (call) => {
         call.answer(localStream);
         call.on('stream', (stream) => {
@@ -385,6 +419,12 @@
           }
         });
       });
+
+      // Recebe conexões de CHAT de dados
+      peer.on('connection', (conn) => {
+        dataConn = conn;
+        setupChatListeners();
+      });
     }
 
     function connectToPeer() {
@@ -393,18 +433,49 @@
       const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
       if (!remoteId) return alert('Digite o nome do usuário a quem deseja se conectar.');
 
+      // Conecta o vídeo
       const call = peer.call(remoteId, localStream, { metadata: { type: 'camera' } });
       call.on('stream', (stream) => {
         remoteVideo.srcObject = stream;
       });
+
+      // Conecta o Chat de dados
+      dataConn = peer.connect(remoteId);
+      setupChatListeners();
     }
 
-    async function startScreenShare() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        alert('O compartilhamento de tela é suportado apenas em navegadores de computador.');
+    function setupChatListeners() {
+      if (!dataConn) return;
+      dataConn.on('data', (data) => {
+        appendMessage(data.sender, data.text, 'other');
+      });
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      if (!dataConn || !dataConn.open) {
+        alert('Conecte-se a outro usuário para enviar mensagens.');
         return;
       }
 
+      dataConn.send({ sender: myRegisteredId || 'Usuário', text: text });
+      appendMessage('Você', text, 'me');
+      input.value = '';
+    }
+
+    function appendMessage(sender, text, type) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `msg ${type}`;
+      msgDiv.innerHTML = `<div class="msg-author">${sender}</div>${text}`;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Transmissão de Tela (Suporta Android Chrome / iOS Safari modernos)
+    async function startScreenShare() {
       if (!peer) return alert('Primeiro registre seu nome no botão "Entrar".');
 
       const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -416,18 +487,13 @@
           audio: false
         });
 
-        const videoTrack = screenStream.getVideoTracks()[0];
-        if ('contentHint' in videoTrack) {
-          videoTrack.contentHint = 'text';
-        }
-
         const screenCall = peer.call(remoteId, screenStream, { metadata: { type: 'screen' } });
 
         screenStream.getVideoTracks()[0].onended = () => {
           screenCall.close();
         };
       } catch (err) {
-        console.error('Erro ao compartilhar tela:', err);
+        alert('Compartilhamento de tela não aceito ou não suportado neste navegador.');
       }
     }
 
