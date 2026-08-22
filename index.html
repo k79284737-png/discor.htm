@@ -19,12 +19,7 @@
       --text-muted: #94a3b8;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
 
     body {
       background: var(--bg-gradient);
@@ -52,14 +47,7 @@
       border-radius: 16px;
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.2rem;
-      font-weight: 700;
-    }
-
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; }
     .logo i { color: var(--primary); }
 
     .status-badge {
@@ -73,17 +61,8 @@
       border: 1px solid var(--glass-border);
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--danger);
-    }
-
-    .status-dot.online {
-      background: var(--success);
-      box-shadow: 0 0 10px var(--success);
-    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+    .status-dot.online { background: var(--success); box-shadow: 0 0 10px var(--success); }
 
     .glass-panel {
       background: var(--glass-bg);
@@ -101,23 +80,9 @@
       padding: 15px;
     }
 
-    .control-card {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .control-card label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 8px;
-    }
+    .control-card { display: flex; flex-direction: column; gap: 8px; }
+    .control-card label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .input-group { display: flex; gap: 8px; }
 
     input {
       flex: 1;
@@ -129,10 +94,7 @@
       font-size: 0.9rem;
     }
 
-    input:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
+    input:focus { outline: none; border-color: var(--primary); }
 
     .btn {
       padding: 10px 16px;
@@ -151,22 +113,14 @@
 
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text); border: 1px solid var(--glass-border); }
+    .btn-danger { background: var(--danger); color: white; }
 
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text);
-      border: 1px solid var(--glass-border);
-    }
-
-    .main-layout {
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 15px;
-    }
+    .main-layout { display: grid; grid-template-columns: 1fr 340px; gap: 15px; }
 
     .video-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 15px;
     }
 
@@ -179,11 +133,7 @@
       border: 1px solid var(--glass-border);
     }
 
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    video { width: 100%; height: 100%; object-fit: cover; }
 
     .video-header {
       position: absolute;
@@ -194,79 +144,21 @@
       border-radius: 6px;
       font-size: 0.75rem;
       border: 1px solid var(--glass-border);
+      z-index: 2;
     }
 
-    /* Chat Section */
-    .chat-panel {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 400px;
-      max-height: 520px;
-      padding: 15px;
-    }
+    /* Chat */
+    .chat-panel { display: flex; flex-direction: column; height: 100%; min-height: 400px; max-height: 520px; padding: 15px; }
+    .chat-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; }
+    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; margin-bottom: 10px; }
 
-    .chat-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
-    }
+    .msg { max-width: 85%; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.3; word-break: break-word; }
+    .msg.me { align-self: flex-end; background: var(--primary); color: #fff; }
+    .msg.other { align-self: flex-start; background: rgba(255, 255, 255, 0.1); color: var(--text); }
+    .msg-author { font-size: 0.7rem; opacity: 0.7; margin-bottom: 2px; }
 
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding-right: 5px;
-      margin-bottom: 10px;
-    }
-
-    .msg {
-      max-width: 85%;
-      padding: 8px 12px;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      line-height: 1.3;
-      word-break: break-word;
-    }
-
-    .msg.me {
-      align-self: flex-end;
-      background: var(--primary);
-      color: #fff;
-    }
-
-    .msg.other {
-      align-self: flex-start;
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--text);
-    }
-
-    .msg-author {
-      font-size: 0.7rem;
-      opacity: 0.7;
-      margin-bottom: 2px;
-    }
-
-    .media-actions {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      padding: 12px;
-    }
-
-    .btn-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      padding: 0;
-    }
-
-    .btn-danger { background: var(--danger); color: white; }
+    .media-actions { display: flex; justify-content: center; gap: 12px; padding: 12px; }
+    .btn-icon { width: 44px; height: 44px; border-radius: 50%; padding: 0; }
 
     @media (max-width: 900px) {
       .main-layout { grid-template-columns: 1fr; }
@@ -291,13 +183,13 @@
     </header>
 
     <div class="controls-grid glass-panel">
-      <!-- Nome / ID Fixo Salvo -->
+      <!-- Meu Nome (Persistente) -->
       <div class="control-card">
-        <label><i class="fa-solid fa-user"></i> Meu Nome (Salvo)</label>
+        <label><i class="fa-solid fa-user"></i> Meu Nome</label>
         <div class="input-group">
           <input type="text" id="my-id-input" placeholder="Digite seu nome..." />
           <button id="btn-entrar" class="btn btn-primary" onclick="definirMeuId()">
-            <i class="fa-solid fa-check"></i> Salvar & Entrar
+            <i class="fa-solid fa-check"></i> Entrar
           </button>
           <button id="btn-trocar" class="btn btn-secondary" onclick="trocarNome()" style="display: none;">
             <i class="fa-solid fa-pen"></i> Trocar Nome
@@ -305,9 +197,9 @@
         </div>
       </div>
 
-      <!-- Conexão com o parceiro -->
+      <!-- Ligar para amigo -->
       <div class="control-card">
-        <label><i class="fa-solid fa-phone"></i> Ligar para Alguém</label>
+        <label><i class="fa-solid fa-phone"></i> Ligar para Amigo</label>
         <div class="input-group">
           <input type="text" id="remote-id-input" placeholder="Nome do amigo..." />
           <button class="btn btn-primary" onclick="connectToPeer()">
@@ -316,9 +208,9 @@
         </div>
       </div>
 
-      <!-- Compartilhar Tela -->
+      <!-- Transmissão de Tela -->
       <div class="control-card">
-        <label><i class="fa-solid fa-desktop"></i> Transmissão de Tela</label>
+        <label><i class="fa-solid fa-desktop"></i> Compartilhar Tela</label>
         <button class="btn btn-secondary" onclick="startScreenShare()">
           <i class="fa-solid fa-display"></i> Transmitir Tela
         </button>
@@ -329,18 +221,18 @@
       <!-- Vídeos -->
       <div class="video-grid">
         <div class="video-card">
-          <div class="video-header"><i class="fa-solid fa-camera"></i> Sua Câmera</div>
+          <div class="video-header"><i class="fa-solid fa-camera"></i> Minha Câmera</div>
           <video id="localVideo" autoplay playsinline muted></video>
         </div>
 
         <div class="video-card">
-          <div class="video-header"><i class="fa-solid fa-user-group"></i> Câmera Remota</div>
-          <video id="remoteVideo" autoplay playsinline></video>
+          <div class="video-header"><i class="fa-solid fa-desktop"></i> Minha Tela (Preview)</div>
+          <video id="localScreenVideo" autoplay playsinline muted></video>
         </div>
 
         <div class="video-card">
-          <div class="video-header"><i class="fa-solid fa-desktop"></i> Tela Remota</div>
-          <video id="remoteScreen" autoplay playsinline></video>
+          <div class="video-header"><i class="fa-solid fa-user-group"></i> Câmera/Tela Remota</div>
+          <video id="remoteVideo" autoplay playsinline></video>
         </div>
       </div>
 
@@ -360,7 +252,7 @@
       </div>
     </div>
 
-    <!-- Mídia -->
+    <!-- Controles de Mídia -->
     <div class="media-actions glass-panel">
       <button id="toggle-mic-btn" class="btn btn-secondary btn-icon" onclick="toggleAudio()" title="Mutar Microfone">
         <i class="fa-solid fa-microphone"></i>
@@ -379,53 +271,56 @@
     let audioEnabled = true;
     let videoEnabled = true;
     let myRegisteredId = "";
-    let chatHistory = JSON.parse(localStorage.getItem('rtc_chat_history') || '[]');
+    let chatHistory = [];
 
     const localVideo = document.getElementById('localVideo');
+    const localScreenVideo = document.getElementById('localScreenVideo');
     const remoteVideo = document.getElementById('remoteVideo');
-    const remoteScreen = document.getElementById('remoteScreen');
     const statusText = document.getElementById('status-text');
     const statusDot = document.getElementById('status-dot');
     const chatMessages = document.getElementById('chat-messages');
 
-    async function initLocalStream() {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: true
-        });
-        localVideo.srcObject = localStream;
-      } catch (err) {
-        console.error('Erro ao acessar câmera/microfone:', err);
-      }
-      
+    // Inicialização da página
+    window.addEventListener('DOMContentLoaded', () => {
       loadChatHistory();
+      initCamera();
 
-      // Carrega o NOME SALVO automaticamente do navegador
-      const savedName = localStorage.getItem('rtc_saved_username');
+      // Carrega o nome guardado no navegador imediatamente
+      const savedName = localStorage.getItem('connectrtc_username');
       if (savedName) {
         document.getElementById('my-id-input').value = savedName;
-        definirMeuId(); // Conecta direto com o nome que já estava salvo!
+        definirMeuId();
+      }
+    });
+
+    async function initCamera() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+      } catch (err) {
+        console.warn('Câmera ou microfone não foram concedidos:', err);
       }
     }
 
     function definirMeuId() {
       const input = document.getElementById('my-id-input');
-      const meuId = input.value.trim().toLowerCase().replace(/\s+/g, '-');
-      if (!meuId) return alert('Digite um nome ou ID válido.');
+      const meuId = input.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      
+      if (!meuId) return alert('Por favor, digite um nome válido (apenas letras ou números).');
+
+      // Salva instantaneamente no localStorage
+      localStorage.setItem('connectrtc_username', meuId);
 
       if (peer) peer.destroy();
+      
+      statusText.innerText = "Conectando ao servidor...";
       peer = new Peer(meuId);
 
       peer.on('open', (id) => {
         myRegisteredId = id;
-        
-        // SALVA O NOME NO NAVEGADOR
-        localStorage.setItem('rtc_saved_username', id);
-
         statusText.innerHTML = `Ativo como: <strong>${id}</strong>`;
         statusDot.classList.add('online');
-        
+
         input.disabled = true;
         document.getElementById('btn-entrar').style.display = 'none';
         document.getElementById('btn-trocar').style.display = 'inline-flex';
@@ -433,20 +328,16 @@
 
       peer.on('error', (err) => {
         if (err.type === 'unavailable-id') {
-          alert('Este ID já está ativo em outro aparelho.');
+          alert('Este nome já está em uso neste momento. Escolha outro.');
         } else {
-          console.error(err);
+          alert('Aviso de Conexão: ' + err.type);
         }
       });
 
       peer.on('call', (call) => {
         call.answer(localStream);
         call.on('stream', (stream) => {
-          if (call.metadata && call.metadata.type === 'screen') {
-            remoteScreen.srcObject = stream;
-          } else {
-            remoteVideo.srcObject = stream;
-          }
+          remoteVideo.srcObject = stream;
         });
       });
 
@@ -457,16 +348,13 @@
     }
 
     function trocarNome() {
-      if (peer) {
-        peer.destroy();
-        peer = null;
-      }
+      if (peer) peer.destroy();
+      peer = null;
       myRegisteredId = "";
       
-      // APAGA O NOME SALVO DO NAVEGADOR
-      localStorage.removeItem('rtc_saved_username');
+      localStorage.removeItem('connectrtc_username');
 
-      statusText.innerHTML = "Desconectado";
+      statusText.innerText = "Desconectado";
       statusDot.classList.remove('online');
 
       const input = document.getElementById('my-id-input');
@@ -477,10 +365,10 @@
     }
 
     function connectToPeer() {
-      if (!peer) return alert('Defina seu nome primeiro.');
-      
-      const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
-      if (!remoteId) return alert('Digite o nome de quem quer ligar.');
+      if (!peer) return alert('Clique primeiro em "Entrar" para registrar seu nome.');
+
+      const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      if (!remoteId) return alert('Digite o nome do amigo para conectar.');
 
       const call = peer.call(remoteId, localStream, { metadata: { type: 'camera' } });
       call.on('stream', (stream) => {
@@ -489,6 +377,40 @@
 
       dataConn = peer.connect(remoteId);
       setupChatListeners();
+    }
+
+    async function startScreenShare() {
+      if (!peer) return alert('Registre seu nome primeiro.');
+
+      const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      
+      if (!location.protocol.includes('https') && location.hostname !== 'localhost') {
+        alert('ATENÇÃO: O compartilhamento de tela exige que o site esteja rodando sob protocolo HTTPS ou via GitHub Pages/Vercel.');
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        return alert('Seu dispositivo ou navegador não suporta a gravação de tela integrada.');
+      }
+
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        
+        // Exibe preview da tela localmente
+        localScreenVideo.srcObject = screenStream;
+
+        if (remoteId) {
+          const screenCall = peer.call(remoteId, screenStream, { metadata: { type: 'screen' } });
+          screenStream.getVideoTracks()[0].onended = () => {
+            screenCall.close();
+            localScreenVideo.srcObject = null;
+          };
+        } else {
+          alert('Sua tela está sendo capturada em preview. Digite o nome do amigo e clique em Conectar para enviar a ele!');
+        }
+      } catch (err) {
+        console.error('Erro no compartilhamento de tela:', err);
+        alert('Não foi possível compartilhar a tela. Certifique-se de que deu a permissão na janela do navegador.');
+      }
     }
 
     function setupChatListeners() {
@@ -504,7 +426,7 @@
       if (!text) return;
 
       if (!dataConn || !dataConn.open) {
-        alert('Conecte-se a alguém primeiro para mandar mensagem.');
+        alert('Você precisa se conectar a um amigo antes de enviar mensagens.');
         return;
       }
 
@@ -517,7 +439,7 @@
     function appendMessage(sender, text, type) {
       appendMessageToDOM(sender, text, type);
       chatHistory.push({ sender, text, type });
-      localStorage.setItem('rtc_chat_history', JSON.stringify(chatHistory));
+      localStorage.setItem('connectrtc_chat', JSON.stringify(chatHistory));
     }
 
     function appendMessageToDOM(sender, text, type) {
@@ -529,45 +451,24 @@
     }
 
     function loadChatHistory() {
-      chatMessages.innerHTML = '';
-      chatHistory.forEach(msg => {
-        appendMessageToDOM(msg.sender, msg.text, msg.type);
-      });
+      const saved = localStorage.getItem('connectrtc_chat');
+      if (saved) {
+        chatHistory = JSON.parse(saved);
+        chatMessages.innerHTML = '';
+        chatHistory.forEach(msg => appendMessageToDOM(msg.sender, msg.text, msg.type));
+      }
     }
 
     function clearChatHistory() {
-      if (confirm('Deseja apagar as mensagens guardadas?')) {
+      if (confirm('Deseja apagar as mensagens salvas?')) {
         chatHistory = [];
-        localStorage.removeItem('rtc_chat_history');
+        localStorage.removeItem('connectrtc_chat');
         chatMessages.innerHTML = '';
       }
     }
 
-    async function startScreenShare() {
-      if (!peer) return alert('Defina seu nome primeiro.');
-
-      const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
-      if (!remoteId) return alert('Digite o nome do parceiro para enviar a tela.');
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        alert('O seu navegador não suporta compartilhamento de tela.');
-        return;
-      }
-
-      try {
-        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-        const screenCall = peer.call(remoteId, screenStream, { metadata: { type: 'screen' } });
-        
-        screenStream.getVideoTracks()[0].onended = () => {
-          screenCall.close();
-        };
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
     function toggleAudio() {
-      if (localStream) {
+      if (localStream && localStream.getAudioTracks().length > 0) {
         audioEnabled = !audioEnabled;
         localStream.getAudioTracks()[0].enabled = audioEnabled;
         const btn = document.getElementById('toggle-mic-btn');
@@ -577,7 +478,7 @@
     }
 
     function toggleVideo() {
-      if (localStream) {
+      if (localStream && localStream.getVideoTracks().length > 0) {
         videoEnabled = !videoEnabled;
         localStream.getVideoTracks()[0].enabled = videoEnabled;
         const btn = document.getElementById('toggle-cam-btn');
@@ -585,8 +486,6 @@
         btn.classList.toggle('btn-danger', !videoEnabled);
       }
     }
-
-    window.onload = initLocalStream;
   </script>
 </body>
 </html>
