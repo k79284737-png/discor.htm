@@ -128,12 +128,19 @@
 
   <header class="glass-panel">
     <h2>RTC Room</h2>
-    <p id="peer-id-display">Seu ID: <span>Conectando...</span></p>
+    <p id="peer-id-display">Digite seu nome abaixo para entrar</p>
   </header>
 
+  <!-- Definir meu próprio nome/ID -->
   <div class="controls-bar glass-panel">
-    <input type="text" id="remote-id-input" placeholder="ID do outro usuário" />
-    <button onclick="connectToPeer()">Conectar Câmera</button>
+    <input type="text" id="my-id-input" placeholder="Digite SEU nome ou ID" />
+    <button onclick="definirMeuId()">Entrar com este Nome</button>
+  </div>
+
+  <!-- Conectar ao parceiro -->
+  <div class="controls-bar glass-panel">
+    <input type="text" id="remote-id-input" placeholder="Nome do usuário para ligar" />
+    <button onclick="connectToPeer()">Ligar Câmera</button>
     <button class="secondary" onclick="startScreenShare()">Compartilhar Tela</button>
   </div>
 
@@ -153,17 +160,15 @@
   </div>
 
   <script>
-    let peer = new Peer();
+    let peer = null;
     let localStream = null;
     let screenStream = null;
-    let activeCall = null;
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
     const remoteScreen = document.getElementById('remoteScreen');
     const peerIdDisplay = document.getElementById('peer-id-display');
 
-    // Inicializa a câmera local com suporte mobile
     async function initLocalStream() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
@@ -177,26 +182,49 @@
       }
     }
 
-    peer.on('open', (id) => {
-      peerIdDisplay.innerHTML = `Seu ID: <strong>${id}</strong>`;
-    });
+    // Cria o ID personalizado no PeerJS
+    function definirMeuId() {
+      const meuId = document.getElementById('my-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
+      
+      if (!meuId) return alert('Por favor, digite um nome ou ID.');
 
-    // Atende chamadas recebidas (Câmera ou Tela)
-    peer.on('call', (call) => {
-      call.answer(localStream);
-      call.on('stream', (stream) => {
-        if (call.metadata && call.metadata.type === 'screen') {
-          remoteScreen.srcObject = stream;
+      if (peer) peer.destroy(); // Fecha conexão anterior se existir
+
+      peer = new Peer(meuId);
+
+      peer.on('open', (id) => {
+        peerIdDisplay.innerHTML = `Seu ID ativo: <strong>${id}</strong>`;
+        alert(`ID registrado como: ${id}`);
+      });
+
+      // Trata erro se o nome já estiver em uso por outra pessoa
+      peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+          alert('Este nome já está em uso por outro usuário. Escolha outro nome.');
         } else {
-          remoteVideo.srcObject = stream;
+          console.error(err);
+          alert('Erro de conexão: ' + err.type);
         }
       });
-    });
 
-    // Conecta à câmera de outro usuário
+      // Recebe chamadas de outros usuários
+      peer.on('call', (call) => {
+        call.answer(localStream);
+        call.on('stream', (stream) => {
+          if (call.metadata && call.metadata.type === 'screen') {
+            remoteScreen.srcObject = stream;
+          } else {
+            remoteVideo.srcObject = stream;
+          }
+        });
+      });
+    }
+
     function connectToPeer() {
-      const remoteId = document.getElementById('remote-id-input').value.trim();
-      if (!remoteId) return alert('Digite o ID do usuário remetente.');
+      if (!peer) return alert('Primeiro defina seu nome e clique em "Entrar com este Nome".');
+      
+      const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
+      if (!remoteId) return alert('Digite o nome do usuário a quem deseja ligar.');
 
       const call = peer.call(remoteId, localStream, { metadata: { type: 'camera' } });
       call.on('stream', (stream) => {
@@ -204,18 +232,16 @@
       });
     }
 
-    // Compartilhamento de tela com trava de suporte para mobile
     async function startScreenShare() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        alert('O compartilhamento de tela não é suportado no navegador do seu celular. Utilize um computador para compartilhar a tela.');
+        alert('O compartilhamento de tela não é suportado no celular. Use um computador.');
         return;
       }
 
-      const remoteId = document.getElementById('remote-id-input').value.trim();
-      if (!remoteId) {
-        alert('Digite o ID do usuário para quem deseja enviar a tela.');
-        return;
-      }
+      if (!peer) return alert('Primeiro defina seu nome e clique em "Entrar com este Nome".');
+
+      const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
+      if (!remoteId) return alert('Digite o nome do usuário para enviar a tela.');
 
       try {
         screenStream = await navigator.mediaDevices.getDisplayMedia({
@@ -223,7 +249,6 @@
           audio: false
         });
 
-        // Otimização de bitrate/contentHint para texto legível no PC
         const videoTrack = screenStream.getVideoTracks()[0];
         if ('contentHint' in videoTrack) {
           videoTrack.contentHint = 'text';
