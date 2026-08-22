@@ -158,8 +158,6 @@
       border: 1px solid var(--glass-border);
     }
 
-    .btn-danger { background: var(--danger); color: white; }
-
     .main-layout {
       display: grid;
       grid-template-columns: 1fr 340px;
@@ -268,6 +266,8 @@
       padding: 0;
     }
 
+    .btn-danger { background: var(--danger); color: white; }
+
     @media (max-width: 900px) {
       .main-layout { grid-template-columns: 1fr; }
       .chat-panel { height: 320px; }
@@ -291,33 +291,36 @@
     </header>
 
     <div class="controls-grid glass-panel">
+      <!-- Nome / ID Fixo Salvo -->
       <div class="control-card">
-        <label><i class="fa-solid fa-user"></i> 1. Seu Nome</label>
+        <label><i class="fa-solid fa-user"></i> Meu Nome (Salvo)</label>
         <div class="input-group">
-          <input type="text" id="my-id-input" placeholder="Ex: joao" />
+          <input type="text" id="my-id-input" placeholder="Digite seu nome..." />
           <button id="btn-entrar" class="btn btn-primary" onclick="definirMeuId()">
-            <i class="fa-solid fa-check"></i> Entrar
+            <i class="fa-solid fa-check"></i> Salvar & Entrar
           </button>
           <button id="btn-trocar" class="btn btn-secondary" onclick="trocarNome()" style="display: none;">
-            <i class="fa-solid fa-right-from-bracket"></i> Trocar
+            <i class="fa-solid fa-pen"></i> Trocar Nome
           </button>
         </div>
       </div>
 
+      <!-- Conexão com o parceiro -->
       <div class="control-card">
-        <label><i class="fa-solid fa-phone"></i> 2. Ligar para Alguém</label>
+        <label><i class="fa-solid fa-phone"></i> Ligar para Alguém</label>
         <div class="input-group">
-          <input type="text" id="remote-id-input" placeholder="Ex: maria" />
+          <input type="text" id="remote-id-input" placeholder="Nome do amigo..." />
           <button class="btn btn-primary" onclick="connectToPeer()">
             <i class="fa-solid fa-paper-plane"></i> Conectar
           </button>
         </div>
       </div>
 
+      <!-- Compartilhar Tela -->
       <div class="control-card">
         <label><i class="fa-solid fa-desktop"></i> Transmissão de Tela</label>
         <button class="btn btn-secondary" onclick="startScreenShare()">
-          <i class="fa-solid fa-display"></i> Compartilhar Tela
+          <i class="fa-solid fa-display"></i> Transmitir Tela
         </button>
       </div>
     </div>
@@ -341,7 +344,7 @@
         </div>
       </div>
 
-      <!-- Chat com LocalStorage -->
+      <!-- Chat -->
       <div class="chat-panel glass-panel">
         <div class="chat-header">
           <span><i class="fa-solid fa-comments"></i> Chat da Sala</span>
@@ -357,6 +360,7 @@
       </div>
     </div>
 
+    <!-- Mídia -->
     <div class="media-actions glass-panel">
       <button id="toggle-mic-btn" class="btn btn-secondary btn-icon" onclick="toggleAudio()" title="Mutar Microfone">
         <i class="fa-solid fa-microphone"></i>
@@ -392,9 +396,17 @@
         });
         localVideo.srcObject = localStream;
       } catch (err) {
-        console.error('Erro ao acessar mídia:', err);
+        console.error('Erro ao acessar câmera/microfone:', err);
       }
+      
       loadChatHistory();
+
+      // Carrega o NOME SALVO automaticamente do navegador
+      const savedName = localStorage.getItem('rtc_saved_username');
+      if (savedName) {
+        document.getElementById('my-id-input').value = savedName;
+        definirMeuId(); // Conecta direto com o nome que já estava salvo!
+      }
     }
 
     function definirMeuId() {
@@ -407,6 +419,10 @@
 
       peer.on('open', (id) => {
         myRegisteredId = id;
+        
+        // SALVA O NOME NO NAVEGADOR
+        localStorage.setItem('rtc_saved_username', id);
+
         statusText.innerHTML = `Ativo como: <strong>${id}</strong>`;
         statusDot.classList.add('online');
         
@@ -417,9 +433,9 @@
 
       peer.on('error', (err) => {
         if (err.type === 'unavailable-id') {
-          alert('Este ID já está em uso por outra pessoa.');
+          alert('Este ID já está ativo em outro aparelho.');
         } else {
-          alert('Erro de conexão: ' + err.type);
+          console.error(err);
         }
       });
 
@@ -446,6 +462,10 @@
         peer = null;
       }
       myRegisteredId = "";
+      
+      // APAGA O NOME SALVO DO NAVEGADOR
+      localStorage.removeItem('rtc_saved_username');
+
       statusText.innerHTML = "Desconectado";
       statusDot.classList.remove('online');
 
@@ -457,10 +477,10 @@
     }
 
     function connectToPeer() {
-      if (!peer) return alert('Primeiro clique no botão "Entrar" para registrar seu nome.');
+      if (!peer) return alert('Defina seu nome primeiro.');
       
       const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
-      if (!remoteId) return alert('Digite o nome do usuário a quem deseja se conectar.');
+      if (!remoteId) return alert('Digite o nome de quem quer ligar.');
 
       const call = peer.call(remoteId, localStream, { metadata: { type: 'camera' } });
       call.on('stream', (stream) => {
@@ -484,7 +504,7 @@
       if (!text) return;
 
       if (!dataConn || !dataConn.open) {
-        alert('Conecte-se a outro usuário para enviar mensagens.');
+        alert('Conecte-se a alguém primeiro para mandar mensagem.');
         return;
       }
 
@@ -516,7 +536,7 @@
     }
 
     function clearChatHistory() {
-      if (confirm('Deseja apagar todo o histórico de mensagens?')) {
+      if (confirm('Deseja apagar as mensagens guardadas?')) {
         chatHistory = [];
         localStorage.removeItem('rtc_chat_history');
         chatMessages.innerHTML = '';
@@ -524,29 +544,25 @@
     }
 
     async function startScreenShare() {
-      if (!peer) return alert('Primeiro registre seu nome no botão "Entrar".');
+      if (!peer) return alert('Defina seu nome primeiro.');
 
       const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
-      if (!remoteId) return alert('Digite o nome do usuário para quem deseja enviar a tela.');
+      if (!remoteId) return alert('Digite o nome do parceiro para enviar a tela.');
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        alert('Seu navegador/sistema móvel não suporta compartilhamento de tela. Recomendamos usar o Chrome no computador.');
+        alert('O seu navegador não suporta compartilhamento de tela.');
         return;
       }
 
       try {
-        screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { cursor: 'always' },
-          audio: false
-        });
-
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
         const screenCall = peer.call(remoteId, screenStream, { metadata: { type: 'screen' } });
-
+        
         screenStream.getVideoTracks()[0].onended = () => {
           screenCall.close();
         };
       } catch (err) {
-        alert('Não foi possível compartilhar a tela. Celulares costumam exigir permissões adicionais do sistema operacional.');
+        console.error(err);
       }
     }
 
