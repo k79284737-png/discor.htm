@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ConnectRTC - Chamada em Grupo & Login</title>
+  <title>ConnectRTC - 1x1, Grupo & Tela</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
@@ -50,12 +50,7 @@
     .logo { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; }
     .logo i { color: var(--primary); }
 
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.85rem;
-    }
+    .user-profile { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; }
 
     .status-badge {
       display: flex;
@@ -81,7 +76,7 @@
 
     .controls-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 12px;
       padding: 15px;
     }
@@ -180,8 +175,8 @@
   <div class="container">
     <header class="glass-panel">
       <div class="logo">
-        <i class="fa-solid fa-users-viewfinder"></i>
-        <span>ConnectRTC Group</span>
+        <i class="fa-solid fa-video"></i>
+        <span>ConnectRTC Multi</span>
       </div>
       <div class="user-profile">
         <div class="status-badge">
@@ -195,39 +190,50 @@
     </header>
 
     <div class="controls-grid glass-panel">
-      <!-- Login / Meu Perfil -->
+      <!-- 1. Login Persistente -->
       <div class="control-card">
-        <label><i class="fa-solid fa-id-card"></i> Seu Usuário (Login)</label>
+        <label><i class="fa-solid fa-id-card"></i> Meu Usuário (Login)</label>
         <div class="input-group">
-          <input type="text" id="username-input" placeholder="Digite seu nome para entrar..." />
+          <input type="text" id="username-input" placeholder="Digite seu nome..." />
           <button id="btn-login" class="btn btn-primary" onclick="fazerLogin()">
             <i class="fa-solid fa-right-to-bracket"></i> Entrar
           </button>
         </div>
       </div>
 
-      <!-- Entrar em Sala Grupo -->
+      <!-- 2. Chamada 1 contra 1 -->
       <div class="control-card">
-        <label><i class="fa-solid fa-door-open"></i> Entrar na Sala do Grupo</label>
+        <label><i class="fa-solid fa-user"></i> Ligação Direta (1x1)</label>
         <div class="input-group">
-          <input type="text" id="room-input" placeholder="Nome da sala (ex: reuniao-1)" />
-          <button class="btn btn-primary" onclick="entrarNaSala()">
-            <i class="fa-solid fa-users"></i> Entrar na Sala
+          <input type="text" id="direct-user-input" placeholder="Nome do usuário..." />
+          <button class="btn btn-primary" onclick="ligarParaUsuario()">
+            <i class="fa-solid fa-phone"></i> Ligar
           </button>
         </div>
       </div>
 
-      <!-- Compartilhar Tela -->
+      <!-- 3. Chamada em Grupo -->
       <div class="control-card">
-        <label><i class="fa-solid fa-desktop"></i> Transmissão</label>
-        <button class="btn btn-secondary" onclick="startScreenShare()">
+        <label><i class="fa-solid fa-users"></i> Sala de Grupo</label>
+        <div class="input-group">
+          <input type="text" id="room-input" placeholder="Nome da sala..." />
+          <button class="btn btn-primary" onclick="entrarNaSala()">
+            <i class="fa-solid fa-door-open"></i> Entrar
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. Compartilhar Tela -->
+      <div class="control-card">
+        <label><i class="fa-solid fa-desktop"></i> Transmissão de Tela</label>
+        <button id="btn-screen" class="btn btn-secondary" onclick="toggleScreenShare()">
           <i class="fa-solid fa-display"></i> Compartilhar Tela
         </button>
       </div>
     </div>
 
     <div class="main-layout">
-      <!-- Grid de Vídeos da Sala -->
+      <!-- Grid de Vídeos -->
       <div id="video-grid" class="video-grid">
         <div class="video-card">
           <div class="video-header"><i class="fa-solid fa-camera"></i> Minha Câmera</div>
@@ -235,22 +241,22 @@
         </div>
 
         <div class="video-card" id="screen-card" style="display: none;">
-          <div class="video-header"><i class="fa-solid fa-desktop"></i> Minha Tela</div>
+          <div class="video-header"><i class="fa-solid fa-desktop"></i> Minha Tela (Preview)</div>
           <video id="localScreenVideo" autoplay playsinline muted></video>
         </div>
       </div>
 
-      <!-- Chat em Grupo -->
+      <!-- Chat -->
       <div class="chat-panel glass-panel">
         <div class="chat-header">
-          <span><i class="fa-solid fa-comments"></i> Chat da Sala</span>
+          <span><i class="fa-solid fa-comments"></i> Chat</span>
           <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="clearChatHistory()" title="Limpar Histórico">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
         <div id="chat-messages" class="chat-messages"></div>
         <div class="input-group">
-          <input type="text" id="chat-input" placeholder="Mensagem para o grupo..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
+          <input type="text" id="chat-input" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
           <button class="btn btn-primary" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
       </div>
@@ -271,16 +277,15 @@
     let peer = null;
     let hostPeer = null;
     let myUsername = "";
-    let currentRoom = "";
     
     let localStream = null;
     let screenStream = null;
     let audioEnabled = true;
     let videoEnabled = true;
 
-    const calls = {};      // Guarda todas as chamadas ativas de mídia { peerId: MediaConnection }
-    const dataConns = {};  // Guarda todas as conexões de chat { peerId: DataConnection }
-    const roomMembers = new Set(); // Guarda os participantes da sala
+    const calls = {};      // Guarda todas as chamadas de vídeo ativas (1x1 ou grupo)
+    const dataConns = {};  // Guarda conexões de chat ativas
+    const roomMembers = new Set();
 
     const localVideo = document.getElementById('localVideo');
     const localScreenVideo = document.getElementById('localScreenVideo');
@@ -292,12 +297,12 @@
       return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
     }
 
-    // Login Persistente ao Carregar a Página
+    // Auto-Login ao carregar a página
     window.addEventListener('DOMContentLoaded', () => {
       initCamera();
       loadChatHistory();
 
-      const savedUser = localStorage.getItem('connectrtc_saved_user');
+      const savedUser = localStorage.getItem('connectrtc_unified_user');
       if (savedUser) {
         document.getElementById('username-input').value = savedUser;
         fazerLogin();
@@ -309,7 +314,7 @@
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
       } catch (err) {
-        console.warn('Câmera/microfone indisponíveis:', err);
+        console.warn('Câmera ou microfone não encontrados:', err);
       }
     }
 
@@ -317,14 +322,14 @@
       const inputVal = document.getElementById('username-input').value;
       const formatted = formatarId(inputVal);
 
-      if (!formatted) return alert('Por favor, informe um nome de usuário válido.');
+      if (!formatted) return alert('Digite um nome válido para o usuário.');
 
       myUsername = formatted;
-      localStorage.setItem('connectrtc_saved_user', myUsername);
+      localStorage.setItem('connectrtc_unified_user', myUsername);
 
       if (peer) peer.destroy();
 
-      statusText.innerText = "Autenticando...";
+      statusText.innerText = "Conectando ao servidor...";
       peer = new Peer(myUsername);
 
       peer.on('open', (id) => {
@@ -337,21 +342,33 @@
       });
 
       peer.on('error', (err) => {
-        if (err.type === 'unavailable-id') {
-          alert('Este usuário já está conectado em outro navegador. Escolha outro nome.');
+        if (err.type === 'peer-unavailable') {
+          alert('Usuário não encontrado ou offline no momento.');
+        } else if (err.type === 'unavailable-id') {
+          alert('Este nome já está em uso em outra aba ou dispositivo.');
           fazerLogout();
         } else {
           console.error('Erro PeerJS:', err);
         }
       });
 
-      // Atende chamadas recebidas do grupo
+      // Atende qualquer chamada recebida (seja 1x1 ou Grupo)
       peer.on('call', (call) => {
         call.answer(localStream);
         setupCall(call);
+
+        // Se já estivermos compartilhando tela, transmite para a nova chamada
+        if (screenStream) {
+          setTimeout(async () => {
+            const sender = call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (sender) {
+              await sender.replaceTrack(screenStream.getVideoTracks()[0]).catch(console.error);
+            }
+          }, 500);
+        }
       });
 
-      // Recebe conexões de chat de outros membros
+      // Conexão de Chat
       peer.on('connection', (conn) => {
         setupDataConn(conn);
       });
@@ -361,9 +378,8 @@
       if (peer) peer.destroy();
       if (hostPeer) hostPeer.destroy();
 
-      localStorage.removeItem('connectrtc_saved_user');
+      localStorage.removeItem('connectrtc_unified_user');
       myUsername = "";
-      currentRoom = "";
 
       statusText.innerText = "Desconectado";
       statusDot.classList.remove('online');
@@ -373,41 +389,47 @@
       document.getElementById('btn-login').style.display = 'inline-flex';
       document.getElementById('btn-logout').style.display = 'none';
 
-      // Limpa vídeos da sala
       document.querySelectorAll('.remote-video-card').forEach(el => el.remove());
     }
 
-    // LÓGICA DE CHAMADA EM GRUPO (SALA MESH)
+    // --- MODO 1: LIGAÇÃO DIRETA (1x1) ---
+    function ligarParaUsuario() {
+      if (!peer || !myUsername) return alert('Faça login primeiro.');
+
+      const targetUser = formatarId(document.getElementById('direct-user-input').value);
+      if (!targetUser) return alert('Digite o nome do usuário para ligar.');
+      if (targetUser === myUsername) return alert('Você não pode ligar para você mesmo.');
+
+      const call = peer.call(targetUser, localStream);
+      setupCall(call);
+
+      const conn = peer.connect(targetUser);
+      setupDataConn(conn);
+    }
+
+    // --- MODO 2: ENTRAR EM SALA DE GRUPO ---
     function entrarNaSala() {
-      if (!peer || !myUsername) return alert('Faça o login com seu usuário primeiro.');
+      if (!peer || !myUsername) return alert('Faça login primeiro.');
 
       const roomName = formatarId(document.getElementById('room-input').value);
-      if (!roomName) return alert('Digite o nome da sala para entrar.');
+      if (!roomName) return alert('Digite o nome da sala de grupo.');
 
-      currentRoom = roomName;
-      const hostId = roomName + '-room-host-server';
+      const hostId = roomName + '-group-host';
 
-      // Tenta conectar como participante ao Host da Sala
-      let isHost = false;
       const conn = peer.connect(hostId);
-
       const hostTimeout = setTimeout(() => {
         if (!conn.open) {
-          // Se o Host não responder rapidamente, este usuário se torna o Host da sala
-          isHost = true;
           iniciarHostDaSala(hostId);
         }
       }, 1200);
 
       conn.on('open', () => {
         clearTimeout(hostTimeout);
-        // Envia mensagem solicitando lista de membros
         conn.send({ type: 'JOIN_ROOM', peerId: myUsername });
       });
 
       conn.on('data', (data) => {
         if (data.type === 'ROOM_MEMBERS') {
-          // Conecta individualmente com todos os participantes do grupo
           data.members.forEach(memberId => {
             if (memberId !== myUsername) {
               conectarAoParticipante(memberId);
@@ -428,11 +450,8 @@
         conn.on('data', (data) => {
           if (data.type === 'JOIN_ROOM') {
             const newPeer = data.peerId;
-            
-            // Retorna a lista atual para o novo membro
             conn.send({ type: 'ROOM_MEMBERS', members: Array.from(roomMembers) });
 
-            // Notifica todos os membros já conectados sobre o novo participante
             Object.values(dataConns).forEach(c => {
               c.send({ type: 'NEW_MEMBER', peerId: newPeer });
             });
@@ -446,15 +465,14 @@
     function conectarAoParticipante(remotePeerId) {
       if (calls[remotePeerId]) return;
 
-      // Chama mídia
       const call = peer.call(remotePeerId, localStream);
       setupCall(call);
 
-      // Conecta Chat
       const conn = peer.connect(remotePeerId);
       setupDataConn(conn);
     }
 
+    // --- GERENCIAMENTO DE CONEXÕES & MÍDIA ---
     function setupCall(call) {
       calls[call.peer] = call;
 
@@ -465,6 +483,10 @@
       call.on('close', () => {
         removerVideoRemoto(call.peer);
         delete calls[call.peer];
+      });
+
+      call.on('error', (err) => {
+        console.error('Erro na chamada:', err);
       });
     }
 
@@ -484,31 +506,58 @@
       });
     }
 
-    // COMPARTILHAMENTO DE TELA EM GRUPO
-    async function startScreenShare() {
+    // --- COMPARTILHAMENTO DE TELA UNIFICADO ---
+    async function toggleScreenShare() {
+      if (screenStream) {
+        stopScreenShare();
+        return;
+      }
+
+      // Validação do ambiente (HTTPS ou localhost necessário)
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        alert("O compartilhamento de tela requer ambiente seguro (HTTPS ou localhost). Não abra o arquivo usando file://");
+        return;
+      }
+
       const activeCalls = Object.values(calls);
       if (activeCalls.length === 0) {
-        return alert('Entre em uma sala com outros participantes para compartilhar a tela.');
+        alert("Você precisa estar em uma chamada ativa (1x1 ou Sala de Grupo) para compartilhar a tela.");
+        return;
       }
 
       try {
-        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { displaySurface: "monitor" },
+          audio: false
+        });
+
         const screenTrack = screenStream.getVideoTracks()[0];
 
         localScreenVideo.srcObject = screenStream;
         document.getElementById('screen-card').style.display = 'block';
+        document.getElementById('btn-screen').classList.replace('btn-secondary', 'btn-danger');
 
-        // Substitui a câmera pela tela para TODOS os participantes ativos na sala
-        activeCalls.forEach(call => {
-          const sender = call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-          if (sender) {
-            sender.replaceTrack(screenTrack);
+        // Substitui a faixa de vídeo para todos os participantes conectados
+        for (const call of activeCalls) {
+          if (call.peerConnection) {
+            const senders = call.peerConnection.getSenders();
+            const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+            if (videoSender) {
+              await videoSender.replaceTrack(screenTrack).catch(console.error);
+            }
           }
-        });
+        }
 
-        screenTrack.onended = stopScreenShare;
+        // Detecta quando o usuário clica no botão "Parar compartilhamento" nativo do navegador
+        screenTrack.onended = () => {
+          stopScreenShare();
+        };
+
       } catch (err) {
-        console.error('Erro ao compartilhar tela:', err);
+        console.error('Erro no compartilhamento de tela:', err);
+        if (err.name !== 'NotAllowedError') {
+          alert('Falha ao compartilhar tela: ' + err.message);
+        }
       }
     }
 
@@ -517,20 +566,27 @@
         screenStream.getTracks().forEach(t => t.stop());
         screenStream = null;
       }
+
       document.getElementById('screen-card').style.display = 'none';
+      document.getElementById('btn-screen').classList.replace('btn-danger', 'btn-secondary');
 
       const videoTrack = localStream ? localStream.getVideoTracks()[0] : null;
 
-      // Restaura a câmera original para todo o grupo
-      Object.values(calls).forEach(call => {
-        const sender = call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender && videoTrack) {
-          sender.replaceTrack(videoTrack);
-        }
-      });
+      // Restaura a câmera original em todas as conexões ativas
+      if (videoTrack) {
+        Object.values(calls).forEach(async (call) => {
+          if (call.peerConnection) {
+            const senders = call.peerConnection.getSenders();
+            const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+            if (videoSender) {
+              await videoSender.replaceTrack(videoTrack).catch(console.error);
+            }
+          }
+        });
+      }
     }
 
-    // GERENCIAMENTO DINÂMICO DE VÍDEOS NA TELA
+    // Dynamic Video Grid
     function adicionarVideoRemoto(peerId, stream) {
       let card = document.getElementById(`video-card-${peerId}`);
       if (!card) {
@@ -552,7 +608,7 @@
       if (card) card.remove();
     }
 
-    // CHAT MULTIPARTY (BROADCAST)
+    // Chat Logic
     function sendChatMessage() {
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
@@ -560,10 +616,9 @@
 
       const activeConns = Object.values(dataConns);
       if (activeConns.length === 0) {
-        return alert('Conecte-se a uma sala para conversar no chat.');
+        return alert('Conecte-se a alguém ou entre em uma sala primeiro.');
       }
 
-      // Transmite a mensagem para todos no grupo
       activeConns.forEach(conn => {
         conn.send({ type: 'CHAT', sender: myUsername, text: text });
       });
@@ -574,9 +629,9 @@
 
     function appendMessage(sender, text, type) {
       appendMessageToDOM(sender, text, type);
-      const history = JSON.parse(localStorage.getItem('connectrtc_group_chat') || '[]');
+      const history = JSON.parse(localStorage.getItem('connectrtc_unified_chat') || '[]');
       history.push({ sender, text, type });
-      localStorage.setItem('connectrtc_group_chat', JSON.stringify(history));
+      localStorage.setItem('connectrtc_unified_chat', JSON.stringify(history));
     }
 
     function appendMessageToDOM(sender, text, type) {
@@ -588,7 +643,7 @@
     }
 
     function loadChatHistory() {
-      const saved = localStorage.getItem('connectrtc_group_chat');
+      const saved = localStorage.getItem('connectrtc_unified_chat');
       if (saved) {
         const history = JSON.parse(saved);
         chatMessages.innerHTML = '';
@@ -597,8 +652,8 @@
     }
 
     function clearChatHistory() {
-      if (confirm('Deseja limpar o histórico do chat?')) {
-        localStorage.removeItem('connectrtc_group_chat');
+      if (confirm('Deseja apagar o histórico de mensagens?')) {
+        localStorage.removeItem('connectrtc_unified_chat');
         chatMessages.innerHTML = '';
       }
     }
