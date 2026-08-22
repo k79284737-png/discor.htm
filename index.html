@@ -158,9 +158,11 @@
       border: 1px solid var(--glass-border);
     }
 
+    .btn-danger { background: var(--danger); color: white; }
+
     .main-layout {
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: 1fr 340px;
       gap: 15px;
     }
 
@@ -201,18 +203,18 @@
       display: flex;
       flex-direction: column;
       height: 100%;
-      min-height: 380px;
-      max-height: 500px;
+      min-height: 400px;
+      max-height: 520px;
       padding: 15px;
     }
 
     .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-weight: 600;
       font-size: 0.9rem;
       margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
     .chat-messages {
@@ -266,11 +268,9 @@
       padding: 0;
     }
 
-    .btn-danger { background: var(--danger); color: white; }
-
     @media (max-width: 900px) {
       .main-layout { grid-template-columns: 1fr; }
-      .chat-panel { height: 300px; }
+      .chat-panel { height: 320px; }
       .input-group { flex-direction: column; }
       .btn { width: 100%; }
     }
@@ -295,8 +295,11 @@
         <label><i class="fa-solid fa-user"></i> 1. Seu Nome</label>
         <div class="input-group">
           <input type="text" id="my-id-input" placeholder="Ex: joao" />
-          <button class="btn btn-primary" onclick="definirMeuId()">
+          <button id="btn-entrar" class="btn btn-primary" onclick="definirMeuId()">
             <i class="fa-solid fa-check"></i> Entrar
+          </button>
+          <button id="btn-trocar" class="btn btn-secondary" onclick="trocarNome()" style="display: none;">
+            <i class="fa-solid fa-right-from-bracket"></i> Trocar
           </button>
         </div>
       </div>
@@ -338,9 +341,14 @@
         </div>
       </div>
 
-      <!-- Chat -->
+      <!-- Chat com LocalStorage -->
       <div class="chat-panel glass-panel">
-        <div class="chat-header"><i class="fa-solid fa-comments"></i> Chat da Sala</div>
+        <div class="chat-header">
+          <span><i class="fa-solid fa-comments"></i> Chat da Sala</span>
+          <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="clearChatHistory()" title="Limpar Histórico">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
         <div id="chat-messages" class="chat-messages"></div>
         <div class="input-group">
           <input type="text" id="chat-input" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
@@ -367,6 +375,7 @@
     let audioEnabled = true;
     let videoEnabled = true;
     let myRegisteredId = "";
+    let chatHistory = JSON.parse(localStorage.getItem('rtc_chat_history') || '[]');
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
@@ -385,10 +394,12 @@
       } catch (err) {
         console.error('Erro ao acessar mídia:', err);
       }
+      loadChatHistory();
     }
 
     function definirMeuId() {
-      const meuId = document.getElementById('my-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
+      const input = document.getElementById('my-id-input');
+      const meuId = input.value.trim().toLowerCase().replace(/\s+/g, '-');
       if (!meuId) return alert('Digite um nome ou ID válido.');
 
       if (peer) peer.destroy();
@@ -398,6 +409,10 @@
         myRegisteredId = id;
         statusText.innerHTML = `Ativo como: <strong>${id}</strong>`;
         statusDot.classList.add('online');
+        
+        input.disabled = true;
+        document.getElementById('btn-entrar').style.display = 'none';
+        document.getElementById('btn-trocar').style.display = 'inline-flex';
       });
 
       peer.on('error', (err) => {
@@ -408,7 +423,6 @@
         }
       });
 
-      // Atende chamadas de vídeo/tela
       peer.on('call', (call) => {
         call.answer(localStream);
         call.on('stream', (stream) => {
@@ -420,11 +434,26 @@
         });
       });
 
-      // Recebe conexões de CHAT de dados
       peer.on('connection', (conn) => {
         dataConn = conn;
         setupChatListeners();
       });
+    }
+
+    function trocarNome() {
+      if (peer) {
+        peer.destroy();
+        peer = null;
+      }
+      myRegisteredId = "";
+      statusText.innerHTML = "Desconectado";
+      statusDot.classList.remove('online');
+
+      const input = document.getElementById('my-id-input');
+      input.disabled = false;
+      input.value = "";
+      document.getElementById('btn-entrar').style.display = 'inline-flex';
+      document.getElementById('btn-trocar').style.display = 'none';
     }
 
     function connectToPeer() {
@@ -433,13 +462,11 @@
       const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
       if (!remoteId) return alert('Digite o nome do usuário a quem deseja se conectar.');
 
-      // Conecta o vídeo
       const call = peer.call(remoteId, localStream, { metadata: { type: 'camera' } });
       call.on('stream', (stream) => {
         remoteVideo.srcObject = stream;
       });
 
-      // Conecta o Chat de dados
       dataConn = peer.connect(remoteId);
       setupChatListeners();
     }
@@ -461,12 +488,19 @@
         return;
       }
 
-      dataConn.send({ sender: myRegisteredId || 'Usuário', text: text });
+      const senderName = myRegisteredId || 'Você';
+      dataConn.send({ sender: senderName, text: text });
       appendMessage('Você', text, 'me');
       input.value = '';
     }
 
     function appendMessage(sender, text, type) {
+      appendMessageToDOM(sender, text, type);
+      chatHistory.push({ sender, text, type });
+      localStorage.setItem('rtc_chat_history', JSON.stringify(chatHistory));
+    }
+
+    function appendMessageToDOM(sender, text, type) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `msg ${type}`;
       msgDiv.innerHTML = `<div class="msg-author">${sender}</div>${text}`;
@@ -474,12 +508,31 @@
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Transmissão de Tela (Suporta Android Chrome / iOS Safari modernos)
+    function loadChatHistory() {
+      chatMessages.innerHTML = '';
+      chatHistory.forEach(msg => {
+        appendMessageToDOM(msg.sender, msg.text, msg.type);
+      });
+    }
+
+    function clearChatHistory() {
+      if (confirm('Deseja apagar todo o histórico de mensagens?')) {
+        chatHistory = [];
+        localStorage.removeItem('rtc_chat_history');
+        chatMessages.innerHTML = '';
+      }
+    }
+
     async function startScreenShare() {
       if (!peer) return alert('Primeiro registre seu nome no botão "Entrar".');
 
       const remoteId = document.getElementById('remote-id-input').value.trim().toLowerCase().replace(/\s+/g, '-');
       if (!remoteId) return alert('Digite o nome do usuário para quem deseja enviar a tela.');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        alert('Seu navegador/sistema móvel não suporta compartilhamento de tela. Recomendamos usar o Chrome no computador.');
+        return;
+      }
 
       try {
         screenStream = await navigator.mediaDevices.getDisplayMedia({
@@ -493,7 +546,7 @@
           screenCall.close();
         };
       } catch (err) {
-        alert('Compartilhamento de tela não aceito ou não suportado neste navegador.');
+        alert('Não foi possível compartilhar a tela. Celulares costumam exigir permissões adicionais do sistema operacional.');
       }
     }
 
