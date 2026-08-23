@@ -105,8 +105,11 @@
       letter-spacing: 0.5px;
     }
 
+    /* CORREÇÃO DO LAYOUT DOS BOTÕES - ALINHAMENTO LADO A LADO */
     .input-group {
-      display: flex;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center;
       gap: 8px;
       width: 100%;
     }
@@ -314,13 +317,16 @@
 
     .btn-emoji:hover { transform: scale(1.3); }
 
+    /* BARRA DE AÇÕES INFERIOR LADO A LADO */
     .media-actions {
-      display: flex;
+      display: flex !important;
+      flex-direction: row !important;
       justify-content: center;
       align-items: center;
       gap: 16px;
       padding: 12px;
       width: 100%;
+      flex-wrap: nowrap;
     }
 
     .btn-icon {
@@ -338,14 +344,6 @@
       .main-layout { grid-template-columns: 1fr; }
       .chat-panel { height: 400px; }
       .controls-grid { grid-template-columns: 1fr; }
-      .input-group { flex-direction: row; }
-      .input-group input { flex: 1; }
-      .input-group .btn { width: auto; }
-    }
-
-    @media (max-width: 480px) {
-      .input-group { flex-direction: column; }
-      .input-group .btn { width: 100%; }
     }
   </style>
 </head>
@@ -525,15 +523,12 @@
     const chatTargetSelect = document.getElementById('chat-target-select');
     const typingIndicator = document.getElementById('typing-indicator');
 
-    // Configuração de redes com múltiplos servidores STUN públicos
     const rtcConfiguration = {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
           { urls: 'stun:global.stun.twilio.com:3478' }
         ]
       }
@@ -558,9 +553,7 @@
       ytPlayer = new YT.Player('player', {
         height: '100%',
         width: '100%',
-        events: {
-          'onStateChange': onPlayerStateChange
-        }
+        events: { 'onStateChange': onPlayerStateChange }
       });
     }
 
@@ -578,7 +571,6 @@
 
       document.getElementById('youtube-container').style.display = 'block';
       ytPlayer.loadVideoById(videoId);
-
       enviarComandoVideo({ type: 'YT_LOAD', videoId: videoId });
     }
 
@@ -593,9 +585,7 @@
     }
 
     function enviarComandoVideo(data) {
-      Object.values(dataConns).forEach(conn => {
-        conn.send(data);
-      });
+      Object.values(dataConns).forEach(conn => conn.send(data));
     }
 
     async function initCamera() {
@@ -605,7 +595,7 @@
           localVideo.srcObject = localStream;
         }
       } catch (err) {
-        console.warn('Câmera/Microfone indisponíveis:', err);
+        console.warn('Câmera/Microfone indisponíveis (requer HTTPS ou localhost):', err);
       }
     }
 
@@ -621,7 +611,6 @@
       if (peer) peer.destroy();
 
       statusText.innerText = "Conectando ao servidor...";
-      
       peer = new Peer(myUsername, rtcConfiguration);
 
       peer.on('open', (id) => {
@@ -646,23 +635,11 @@
 
       peer.on('call', async (call) => {
         if (!localStream) await initCamera();
-
         call.answer(localStream);
         setupCall(call);
-
-        if (screenStream) {
-          setTimeout(async () => {
-            const sender = call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-            if (sender) {
-              await sender.replaceTrack(screenStream.getVideoTracks()[0]).catch(console.error);
-            }
-          }, 500);
-        }
       });
 
-      peer.on('connection', (conn) => {
-        setupDataConn(conn);
-      });
+      peer.on('connection', (conn) => setupDataConn(conn));
     }
 
     function fazerLogout() {
@@ -707,12 +684,10 @@
       if (!roomName) return alert('Digite o nome da sala.');
 
       const hostId = roomName + '-group-host';
-
       const conn = peer.connect(hostId);
+
       const hostTimeout = setTimeout(() => {
-        if (!conn.open) {
-          iniciarHostDaSala(hostId);
-        }
+        if (!conn.open) iniciarHostDaSala(hostId);
       }, 1200);
 
       conn.on('open', () => {
@@ -723,9 +698,7 @@
       conn.on('data', (data) => {
         if (data.type === 'ROOM_MEMBERS') {
           data.members.forEach(memberId => {
-            if (memberId !== myUsername) {
-              conectarAoParticipante(memberId);
-            }
+            if (memberId !== myUsername) conectarAoParticipante(memberId);
           });
         }
       });
@@ -744,10 +717,7 @@
             const newPeer = data.peerId;
             conn.send({ type: 'ROOM_MEMBERS', members: Array.from(roomMembers) });
 
-            Object.values(dataConns).forEach(c => {
-              c.send({ type: 'NEW_MEMBER', peerId: newPeer });
-            });
-
+            Object.values(dataConns).forEach(c => c.send({ type: 'NEW_MEMBER', peerId: newPeer }));
             roomMembers.add(newPeer);
           }
         });
@@ -756,7 +726,6 @@
 
     async function conectarAoParticipante(remotePeerId) {
       if (calls[remotePeerId]) return;
-
       if (!localStream) await initCamera();
 
       const call = peer.call(remotePeerId, localStream);
@@ -769,9 +738,7 @@
     function setupCall(call) {
       calls[call.peer] = call;
 
-      call.on('stream', (remoteStream) => {
-        adicionarVideoRemoto(call.peer, remoteStream);
-      });
+      call.on('stream', (remoteStream) => adicionarVideoRemoto(call.peer, remoteStream));
 
       call.on('close', () => {
         removerVideoRemoto(call.peer);
@@ -784,10 +751,7 @@
 
     function setupDataConn(conn) {
       dataConns[conn.peer] = conn;
-
-      conn.on('open', () => {
-        updateChatTargets();
-      });
+      conn.on('open', () => updateChatTargets());
 
       conn.on('data', (data) => {
         if (data.type === 'CHAT') {
@@ -838,7 +802,6 @@
       }
     }
 
-    /* ADICIONAR E GERENCIAR VÍDEO REMOTO COM TRATAMENTO AUTOMÁTICO DE AUTOPLAY */
     function adicionarVideoRemoto(peerId, stream) {
       let card = document.getElementById(`video-card-${peerId}`);
       if (!card) {
@@ -866,7 +829,6 @@
       const vid = document.getElementById(`video-${peerId}`);
       vid.srcObject = stream;
 
-      // Executa a reprodução com captura de bloqueios de mídia
       const playPromise = vid.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
@@ -906,7 +868,6 @@
       }
     }
 
-    /* RECURSOS DE VÍDEO: PICTURE-IN-PICTURE & TELA CHEIA */
     async function togglePiP(videoId) {
       const video = document.getElementById(videoId);
       if (!video) return;
@@ -916,8 +877,6 @@
           await document.exitPictureInPicture();
         } else if (document.pictureInPictureEnabled) {
           await video.requestPictureInPicture();
-        } else {
-          alert('Seu navegador não suporta a função Picture-in-Picture.');
         }
       } catch (err) {
         console.error('Erro PiP:', err);
@@ -926,46 +885,25 @@
 
     function toggleFullscreen(element) {
       if (!document.fullscreenElement) {
-        if (element.requestFullscreen) {
-          element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) {
-          element.webkitRequestFullscreen();
-        }
+        if (element.requestFullscreen) element.requestFullscreen();
       } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
       }
     }
 
-    /* COMPARTILHAMENTO DE TELA */
     async function toggleScreenShare() {
       if (screenStream) {
         stopScreenShare();
         return;
       }
 
-      const activeCalls = Object.values(calls);
-      if (activeCalls.length === 0) {
+      if (Object.keys(calls).length === 0) {
         alert("Você precisa estar em uma chamada ativa para transmitir a tela.");
         return;
       }
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        alert("Captura de tela não suportada diretamente neste navegador.\nExige conexão HTTPS e navegador moderno (Chrome, Edge ou Safari no iOS).");
-        return;
-      }
-
       try {
-        try {
-          screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: { displaySurface: "monitor" },
-            audio: false
-          });
-        } catch (e) {
-          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        }
-
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const screenTrack = screenStream.getVideoTracks()[0];
 
         localScreenVideo.srcObject = screenStream;
@@ -975,23 +913,18 @@
         btnScreen.classList.replace('btn-secondary', 'btn-danger');
         btnScreen.innerHTML = '<i class="fa-solid fa-stop"></i> Parar Transmissão';
 
-        for (const call of activeCalls) {
+        Object.values(calls).forEach(async (call) => {
           if (call.peerConnection) {
             const senders = call.peerConnection.getSenders();
             const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-            if (videoSender) {
-              await videoSender.replaceTrack(screenTrack).catch(console.error);
-            }
+            if (videoSender) await videoSender.replaceTrack(screenTrack);
           }
-        }
+        });
 
         screenTrack.onended = () => stopScreenShare();
 
       } catch (err) {
         console.error('Erro no compartilhamento de tela:', err);
-        if (err.name !== 'NotAllowedError') {
-          alert('Não foi possível iniciar a transmissão de tela: ' + err.message);
-        }
       }
     }
 
@@ -1013,9 +946,7 @@
           if (call.peerConnection) {
             const senders = call.peerConnection.getSenders();
             const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-            if (videoSender) {
-              await videoSender.replaceTrack(videoTrack).catch(console.error);
-            }
+            if (videoSender) await videoSender.replaceTrack(videoTrack);
           }
         });
       }
@@ -1040,17 +971,13 @@
     }
 
     function handleTyping() {
-      Object.values(dataConns).forEach(conn => {
-        conn.send({ type: 'TYPING', sender: myUsername });
-      });
+      Object.values(dataConns).forEach(conn => conn.send({ type: 'TYPING', sender: myUsername }));
     }
 
     function showTypingIndicator(sender) {
       typingIndicator.innerText = `${sender} está digitando...`;
       clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        typingIndicator.innerText = "";
-      }, 2000);
+      typingTimeout = setTimeout(() => typingIndicator.innerText = "", 2000);
     }
 
     function takeSnapshot() {
@@ -1086,13 +1013,9 @@
         }
       } else {
         const activeConns = Object.values(dataConns);
-        if (activeConns.length === 0) {
-          return alert('Conecte-se a alguém ou entre em uma sala primeiro.');
-        }
+        if (activeConns.length === 0) return alert('Conecte-se a alguém ou entre em uma sala primeiro.');
 
-        activeConns.forEach(conn => {
-          conn.send({ type: 'CHAT', sender: myUsername, text: text, isPrivate: false });
-        });
+        activeConns.forEach(conn => conn.send({ type: 'CHAT', sender: myUsername, text: text, isPrivate: false }));
         appendMessage('Você', text, 'me', false);
       }
 
@@ -1109,10 +1032,8 @@
     function appendMessageToDOM(sender, text, type, isPrivate = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `msg ${type} ${isPrivate ? 'private' : ''}`;
-      
       const tagHtml = isPrivate ? `<span class="msg-tag">Privado</span>` : '';
       msgDiv.innerHTML = `<div class="msg-author"><span>${sender}</span> ${tagHtml}</div>${text}`;
-      
       chatMessages.appendChild(msgDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
