@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ConnectRTC - 1x1, Grupo & Tela</title>
+  <title>ConnectRTC Pro - Suporte a Celular & WebRTC</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-      --glass-bg: rgba(30, 41, 59, 0.7);
-      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-bg: rgba(30, 41, 59, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.12);
       --primary: #6366f1;
       --primary-hover: #4f46e5;
       --success: #10b981;
       --danger: #ef4444;
+      --warning: #f59e0b;
       --text: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -29,6 +30,7 @@
       flex-direction: column;
       align-items: center;
       padding: 15px;
+      overflow-x: hidden;
     }
 
     .container {
@@ -76,7 +78,7 @@
 
     .controls-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
       padding: 15px;
     }
@@ -85,17 +87,17 @@
     .control-card label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
     .input-group { display: flex; gap: 8px; }
 
-    input {
+    input, select {
       flex: 1;
       padding: 10px 14px;
       border-radius: 10px;
       border: 1px solid var(--glass-border);
-      background: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.8);
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
-    input:focus { outline: none; border-color: var(--primary); }
+    input:focus, select:focus { outline: none; border-color: var(--primary); }
 
     .btn {
       padding: 10px 16px;
@@ -112,18 +114,21 @@
       white-space: nowrap;
     }
 
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
     .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text); border: 1px solid var(--glass-border); }
+    .btn-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); }
     .btn-danger { background: var(--danger); color: white; }
 
-    .main-layout { display: grid; grid-template-columns: 1fr 340px; gap: 15px; }
+    .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 15px; }
 
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 15px;
       align-content: start;
+      position: relative;
     }
 
     .video-card {
@@ -149,22 +154,77 @@
       z-index: 2;
     }
 
-    /* Chat */
-    .chat-panel { display: flex; flex-direction: column; height: 100%; min-height: 450px; max-height: 550px; padding: 15px; }
-    .chat-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; }
-    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; margin-bottom: 10px; }
+    .reaction-overlay {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 999;
+    }
 
-    .msg { max-width: 85%; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.3; word-break: break-word; }
+    .floating-emoji {
+      position: absolute;
+      font-size: 3rem;
+      animation: floatUp 2.5s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(0.6); }
+      50% { opacity: 0.9; transform: translateY(-120px) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-250px) scale(1.5); }
+    }
+
+    .chat-panel { display: flex; flex-direction: column; height: 100%; min-height: 480px; max-height: 580px; padding: 15px; }
+    .chat-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; }
+    
+    .chat-target-selector {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chat-target-selector label { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; }
+
+    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; margin-bottom: 8px; }
+
+    .msg { max-width: 88%; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; line-height: 1.35; word-break: break-word; }
     .msg.me { align-self: flex-end; background: var(--primary); color: #fff; }
     .msg.other { align-self: flex-start; background: rgba(255, 255, 255, 0.1); color: var(--text); }
-    .msg-author { font-size: 0.7rem; opacity: 0.75; margin-bottom: 2px; font-weight: bold; }
+    .msg.private { border: 1px dashed var(--warning); background: rgba(245, 158, 11, 0.15); }
+    
+    .msg-author { font-size: 0.7rem; opacity: 0.8; margin-bottom: 2px; font-weight: bold; display: flex; justify-content: space-between; gap: 8px; }
+    .msg-tag { background: var(--warning); color: #000; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+
+    .typing-indicator { font-size: 0.75rem; color: var(--text-muted); font-style: italic; min-height: 18px; margin-bottom: 5px; }
+
+    .reactions-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 8px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+
+    .btn-emoji {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .btn-emoji:hover { transform: scale(1.3); }
 
     .media-actions { display: flex; justify-content: center; gap: 12px; padding: 12px; }
     .btn-icon { width: 44px; height: 44px; border-radius: 50%; padding: 0; }
 
     @media (max-width: 900px) {
       .main-layout { grid-template-columns: 1fr; }
-      .chat-panel { height: 320px; }
+      .chat-panel { height: 360px; }
       .input-group { flex-direction: column; }
       .btn { width: 100%; }
     }
@@ -172,11 +232,13 @@
 </head>
 <body>
 
+  <div id="reaction-overlay" class="reaction-overlay"></div>
+
   <div class="container">
     <header class="glass-panel">
       <div class="logo">
-        <i class="fa-solid fa-video"></i>
-        <span>ConnectRTC Multi</span>
+        <i class="fa-solid fa-headset"></i>
+        <span>ConnectRTC Pro</span>
       </div>
       <div class="user-profile">
         <div class="status-badge">
@@ -190,9 +252,9 @@
     </header>
 
     <div class="controls-grid glass-panel">
-      <!-- 1. Login Persistente -->
+      <!-- 1. Login -->
       <div class="control-card">
-        <label><i class="fa-solid fa-id-card"></i> Meu Usuário (Login)</label>
+        <label><i class="fa-solid fa-id-card"></i> Meu Usuário</label>
         <div class="input-group">
           <input type="text" id="username-input" placeholder="Digite seu nome..." />
           <button id="btn-login" class="btn btn-primary" onclick="fazerLogin()">
@@ -201,9 +263,9 @@
         </div>
       </div>
 
-      <!-- 2. Chamada 1 contra 1 -->
+      <!-- 2. Ligação Direta -->
       <div class="control-card">
-        <label><i class="fa-solid fa-user"></i> Ligação Direta (1x1)</label>
+        <label><i class="fa-solid fa-user"></i> Ligação (1x1)</label>
         <div class="input-group">
           <input type="text" id="direct-user-input" placeholder="Nome do usuário..." />
           <button class="btn btn-primary" onclick="ligarParaUsuario()">
@@ -212,9 +274,9 @@
         </div>
       </div>
 
-      <!-- 3. Chamada em Grupo -->
+      <!-- 3. Sala em Grupo -->
       <div class="control-card">
-        <label><i class="fa-solid fa-users"></i> Sala de Grupo</label>
+        <label><i class="fa-solid fa-users"></i> Sala em Grupo</label>
         <div class="input-group">
           <input type="text" id="room-input" placeholder="Nome da sala..." />
           <button class="btn btn-primary" onclick="entrarNaSala()">
@@ -225,7 +287,7 @@
 
       <!-- 4. Compartilhar Tela -->
       <div class="control-card">
-        <label><i class="fa-solid fa-desktop"></i> Transmissão de Tela</label>
+        <label><i class="fa-solid fa-desktop"></i> Transmissão</label>
         <button id="btn-screen" class="btn btn-secondary" onclick="toggleScreenShare()">
           <i class="fa-solid fa-display"></i> Compartilhar Tela
         </button>
@@ -241,34 +303,59 @@
         </div>
 
         <div class="video-card" id="screen-card" style="display: none;">
-          <div class="video-header"><i class="fa-solid fa-desktop"></i> Minha Tela (Preview)</div>
+          <div class="video-header"><i class="fa-solid fa-desktop"></i> Minha Tela</div>
           <video id="localScreenVideo" autoplay playsinline muted></video>
         </div>
       </div>
 
-      <!-- Chat -->
+      <!-- Chat e Interações -->
       <div class="chat-panel glass-panel">
         <div class="chat-header">
-          <span><i class="fa-solid fa-comments"></i> Chat</span>
+          <span><i class="fa-solid fa-comments"></i> Chat & Interações</span>
           <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="clearChatHistory()" title="Limpar Histórico">
             <i class="fa-solid fa-trash"></i>
           </button>
         </div>
+
+        <!-- Seletor Grupo vs Privado -->
+        <div class="chat-target-selector">
+          <label><i class="fa-solid fa-paper-plane"></i> Enviar para:</label>
+          <select id="chat-target-select">
+            <option value="all">📢 Todos (Grupo)</option>
+          </select>
+        </div>
+
+        <!-- Mensagens -->
         <div id="chat-messages" class="chat-messages"></div>
+
+        <div id="typing-indicator" class="typing-indicator"></div>
+
+        <!-- Reações rápidas -->
+        <div class="reactions-bar">
+          <button class="btn-emoji" onclick="sendEmoji('👍')">👍</button>
+          <button class="btn-emoji" onclick="sendEmoji('❤️')">❤️</button>
+          <button class="btn-emoji" onclick="sendEmoji('😂')">😂</button>
+          <button class="btn-emoji" onclick="sendEmoji('🔥')">🔥</button>
+          <button class="btn-emoji" onclick="sendEmoji('✋')">✋</button>
+        </div>
+
         <div class="input-group">
-          <input type="text" id="chat-input" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
+          <input type="text" id="chat-input" placeholder="Digite uma mensagem..." oninput="handleTyping()" onkeydown="if(event.key==='Enter') sendChatMessage()" />
           <button class="btn btn-primary" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
       </div>
     </div>
 
-    <!-- Controles de Mídia -->
+    <!-- Controles de Mídia Extra -->
     <div class="media-actions glass-panel">
       <button id="toggle-mic-btn" class="btn btn-secondary btn-icon" onclick="toggleAudio()" title="Mutar Microfone">
         <i class="fa-solid fa-microphone"></i>
       </button>
       <button id="toggle-cam-btn" class="btn btn-secondary btn-icon" onclick="toggleVideo()" title="Desligar Câmera">
         <i class="fa-solid fa-video"></i>
+      </button>
+      <button class="btn btn-secondary btn-icon" onclick="takeSnapshot()" title="Tirar Foto (Snapshot)">
+        <i class="fa-solid fa-camera-retro"></i>
       </button>
     </div>
   </div>
@@ -282,9 +369,10 @@
     let screenStream = null;
     let audioEnabled = true;
     let videoEnabled = true;
+    let typingTimeout = null;
 
-    const calls = {};      // Guarda todas as chamadas de vídeo ativas (1x1 ou grupo)
-    const dataConns = {};  // Guarda conexões de chat ativas
+    const calls = {};      
+    const dataConns = {};  
     const roomMembers = new Set();
 
     const localVideo = document.getElementById('localVideo');
@@ -292,15 +380,17 @@
     const statusText = document.getElementById('status-text');
     const statusDot = document.getElementById('status-dot');
     const chatMessages = document.getElementById('chat-messages');
+    const chatTargetSelect = document.getElementById('chat-target-select');
+    const typingIndicator = document.getElementById('typing-indicator');
 
     function formatarId(texto) {
       return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
     }
 
-    // Auto-Login ao carregar a página
     window.addEventListener('DOMContentLoaded', () => {
       initCamera();
       loadChatHistory();
+      checkScreenShareSupport();
 
       const savedUser = localStorage.getItem('connectrtc_unified_user');
       if (savedUser) {
@@ -309,12 +399,25 @@
       }
     });
 
+    // Detecta compatibilidade ao carregar
+    function checkScreenShareSupport() {
+      const btnScreen = document.getElementById('btn-screen');
+      const isSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+
+      if (!isSupported) {
+        btnScreen.disabled = true;
+        btnScreen.classList.replace('btn-secondary', 'btn-danger');
+        btnScreen.title = "Compartilhamento não suportado neste navegador";
+        btnScreen.innerHTML = '<i class="fa-solid fa-ban"></i> Tela Indisponível';
+      }
+    }
+
     async function initCamera() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
       } catch (err) {
-        console.warn('Câmera ou microfone não encontrados:', err);
+        console.warn('Câmera/Microfone indisponíveis:', err);
       }
     }
 
@@ -322,7 +425,7 @@
       const inputVal = document.getElementById('username-input').value;
       const formatted = formatarId(inputVal);
 
-      if (!formatted) return alert('Digite um nome válido para o usuário.');
+      if (!formatted) return alert('Digite um nome de usuário válido.');
 
       myUsername = formatted;
       localStorage.setItem('connectrtc_unified_user', myUsername);
@@ -343,21 +446,19 @@
 
       peer.on('error', (err) => {
         if (err.type === 'peer-unavailable') {
-          alert('Usuário não encontrado ou offline no momento.');
+          alert('Usuário não encontrado ou offline.');
         } else if (err.type === 'unavailable-id') {
-          alert('Este nome já está em uso em outra aba ou dispositivo.');
+          alert('Nome em uso por outro dispositivo.');
           fazerLogout();
         } else {
           console.error('Erro PeerJS:', err);
         }
       });
 
-      // Atende qualquer chamada recebida (seja 1x1 ou Grupo)
       peer.on('call', (call) => {
         call.answer(localStream);
         setupCall(call);
 
-        // Se já estivermos compartilhando tela, transmite para a nova chamada
         if (screenStream) {
           setTimeout(async () => {
             const sender = call.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
@@ -368,7 +469,6 @@
         }
       });
 
-      // Conexão de Chat
       peer.on('connection', (conn) => {
         setupDataConn(conn);
       });
@@ -390,15 +490,15 @@
       document.getElementById('btn-logout').style.display = 'none';
 
       document.querySelectorAll('.remote-video-card').forEach(el => el.remove());
+      updateChatTargets();
     }
 
-    // --- MODO 1: LIGAÇÃO DIRETA (1x1) ---
     function ligarParaUsuario() {
       if (!peer || !myUsername) return alert('Faça login primeiro.');
 
       const targetUser = formatarId(document.getElementById('direct-user-input').value);
-      if (!targetUser) return alert('Digite o nome do usuário para ligar.');
-      if (targetUser === myUsername) return alert('Você não pode ligar para você mesmo.');
+      if (!targetUser) return alert('Digite o nome do usuário.');
+      if (targetUser === myUsername) return alert('Você não pode ligar para si mesmo.');
 
       const call = peer.call(targetUser, localStream);
       setupCall(call);
@@ -407,12 +507,11 @@
       setupDataConn(conn);
     }
 
-    // --- MODO 2: ENTRAR EM SALA DE GRUPO ---
     function entrarNaSala() {
       if (!peer || !myUsername) return alert('Faça login primeiro.');
 
       const roomName = formatarId(document.getElementById('room-input').value);
-      if (!roomName) return alert('Digite o nome da sala de grupo.');
+      if (!roomName) return alert('Digite o nome da sala.');
 
       const hostId = roomName + '-group-host';
 
@@ -472,7 +571,6 @@
       setupDataConn(conn);
     }
 
-    // --- GERENCIAMENTO DE CONEXÕES & MÍDIA ---
     function setupCall(call) {
       calls[call.peer] = call;
 
@@ -483,19 +581,26 @@
       call.on('close', () => {
         removerVideoRemoto(call.peer);
         delete calls[call.peer];
+        updateChatTargets();
       });
 
-      call.on('error', (err) => {
-        console.error('Erro na chamada:', err);
-      });
+      call.on('error', (err) => console.error('Erro na chamada:', err));
     }
 
     function setupDataConn(conn) {
       dataConns[conn.peer] = conn;
 
+      conn.on('open', () => {
+        updateChatTargets();
+      });
+
       conn.on('data', (data) => {
         if (data.type === 'CHAT') {
-          appendMessage(data.sender, data.text, 'other');
+          appendMessage(data.sender, data.text, 'other', data.isPrivate);
+        } else if (data.type === 'REACTION') {
+          showFloatingReaction(data.emoji);
+        } else if (data.type === 'TYPING') {
+          showTypingIndicator(data.sender);
         } else if (data.type === 'NEW_MEMBER') {
           conectarAoParticipante(data.peerId);
         }
@@ -503,33 +608,51 @@
 
       conn.on('close', () => {
         delete dataConns[conn.peer];
+        updateChatTargets();
       });
     }
 
-    // --- COMPARTILHAMENTO DE TELA UNIFICADO ---
+    function updateChatTargets() {
+      const currentTarget = chatTargetSelect.value;
+      chatTargetSelect.innerHTML = '<option value="all">📢 Todos (Grupo)</option>';
+
+      Object.keys(dataConns).forEach(peerId => {
+        const option = document.createElement('option');
+        option.value = peerId;
+        option.textContent = `🔒 Privado: ${peerId}`;
+        chatTargetSelect.appendChild(option);
+      });
+
+      if (Array.from(chatTargetSelect.options).some(o => o.value === currentTarget)) {
+        chatTargetSelect.value = currentTarget;
+      }
+    }
+
+    // COMPARTILHAMENTO DE TELA ADAPTADO PARA MÓBILE E DESKTOP
     async function toggleScreenShare() {
       if (screenStream) {
         stopScreenShare();
         return;
       }
 
-      // Validação do ambiente (HTTPS ou localhost necessário)
       if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        alert("O compartilhamento de tela requer ambiente seguro (HTTPS ou localhost). Não abra o arquivo usando file://");
+        alert("Seu navegador ou protocolo atual não suporta captura de tela.\n\nPara funcionar no celular:\n1. Certifique-se de acessar via HTTPS.\n2. Abra o link fora do leitor do WhatsApp/Instagram (abra no Chrome/Safari).");
         return;
       }
 
       const activeCalls = Object.values(calls);
       if (activeCalls.length === 0) {
-        alert("Você precisa estar em uma chamada ativa (1x1 ou Sala de Grupo) para compartilhar a tela.");
+        alert("Você precisa estar em uma chamada ativa para compartilhar a tela.");
         return;
       }
 
       try {
-        screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { displaySurface: "monitor" },
-          audio: false
-        });
+        // Tenta capturar com fallback para navegadores móbiles
+        try {
+          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        } catch (e) {
+          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        }
 
         const screenTrack = screenStream.getVideoTracks()[0];
 
@@ -537,7 +660,6 @@
         document.getElementById('screen-card').style.display = 'block';
         document.getElementById('btn-screen').classList.replace('btn-secondary', 'btn-danger');
 
-        // Substitui a faixa de vídeo para todos os participantes conectados
         for (const call of activeCalls) {
           if (call.peerConnection) {
             const senders = call.peerConnection.getSenders();
@@ -548,14 +670,13 @@
           }
         }
 
-        // Detecta quando o usuário clica no botão "Parar compartilhamento" nativo do navegador
-        screenTrack.onended = () => {
-          stopScreenShare();
-        };
+        screenTrack.onended = () => stopScreenShare();
 
       } catch (err) {
         console.error('Erro no compartilhamento de tela:', err);
-        if (err.name !== 'NotAllowedError') {
+        if (err.name === 'NotAllowedError') {
+          alert('Permissão de captura de tela cancelada pelo usuário.');
+        } else {
           alert('Falha ao compartilhar tela: ' + err.message);
         }
       }
@@ -572,7 +693,6 @@
 
       const videoTrack = localStream ? localStream.getVideoTracks()[0] : null;
 
-      // Restaura a câmera original em todas as conexões ativas
       if (videoTrack) {
         Object.values(calls).forEach(async (call) => {
           if (call.peerConnection) {
@@ -586,7 +706,53 @@
       }
     }
 
-    // Dynamic Video Grid
+    function sendEmoji(emoji) {
+      Object.values(dataConns).forEach(conn => {
+        conn.send({ type: 'REACTION', emoji: emoji, sender: myUsername });
+      });
+      showFloatingReaction(emoji);
+    }
+
+    function showFloatingReaction(emoji) {
+      const overlay = document.getElementById('reaction-overlay');
+      const el = document.createElement('div');
+      el.className = 'floating-emoji';
+      el.innerText = emoji;
+      el.style.left = `${Math.random() * 80 - 40}px`;
+      overlay.appendChild(el);
+
+      setTimeout(() => el.remove(), 2500);
+    }
+
+    function handleTyping() {
+      Object.values(dataConns).forEach(conn => {
+        conn.send({ type: 'TYPING', sender: myUsername });
+      });
+    }
+
+    function showTypingIndicator(sender) {
+      typingIndicator.innerText = `${sender} está digitando...`;
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typingIndicator.innerText = "";
+      }, 2000);
+    }
+
+    function takeSnapshot() {
+      if (!localVideo.srcObject) return alert('Nenhum vídeo local ativo para fotografar.');
+
+      const canvas = document.createElement('canvas');
+      canvas.width = localVideo.videoWidth || 640;
+      canvas.height = localVideo.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
+
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `connectrtc-snapshot-${Date.now()}.png`;
+      a.click();
+    }
+
     function adicionarVideoRemoto(peerId, stream) {
       let card = document.getElementById(`video-card-${peerId}`);
       if (!card) {
@@ -608,36 +774,51 @@
       if (card) card.remove();
     }
 
-    // Chat Logic
     function sendChatMessage() {
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
       if (!text) return;
 
-      const activeConns = Object.values(dataConns);
-      if (activeConns.length === 0) {
-        return alert('Conecte-se a alguém ou entre em uma sala primeiro.');
+      const target = chatTargetSelect.value;
+      const isPrivate = target !== 'all';
+
+      if (isPrivate) {
+        const conn = dataConns[target];
+        if (conn) {
+          conn.send({ type: 'CHAT', sender: myUsername, text: text, isPrivate: true });
+          appendMessage(`Para [${target}]`, text, 'me', true);
+        } else {
+          alert('Usuário não está mais conectado.');
+        }
+      } else {
+        const activeConns = Object.values(dataConns);
+        if (activeConns.length === 0) {
+          return alert('Conecte-se a alguém ou entre em uma sala primeiro.');
+        }
+
+        activeConns.forEach(conn => {
+          conn.send({ type: 'CHAT', sender: myUsername, text: text, isPrivate: false });
+        });
+        appendMessage('Você', text, 'me', false);
       }
 
-      activeConns.forEach(conn => {
-        conn.send({ type: 'CHAT', sender: myUsername, text: text });
-      });
-
-      appendMessage('Você', text, 'me');
       input.value = '';
     }
 
-    function appendMessage(sender, text, type) {
-      appendMessageToDOM(sender, text, type);
+    function appendMessage(sender, text, type, isPrivate = false) {
+      appendMessageToDOM(sender, text, type, isPrivate);
       const history = JSON.parse(localStorage.getItem('connectrtc_unified_chat') || '[]');
-      history.push({ sender, text, type });
+      history.push({ sender, text, type, isPrivate });
       localStorage.setItem('connectrtc_unified_chat', JSON.stringify(history));
     }
 
-    function appendMessageToDOM(sender, text, type) {
+    function appendMessageToDOM(sender, text, type, isPrivate = false) {
       const msgDiv = document.createElement('div');
-      msgDiv.className = `msg ${type}`;
-      msgDiv.innerHTML = `<div class="msg-author">${sender}</div>${text}`;
+      msgDiv.className = `msg ${type} ${isPrivate ? 'private' : ''}`;
+      
+      const tagHtml = isPrivate ? `<span class="msg-tag">Privado</span>` : '';
+      msgDiv.innerHTML = `<div class="msg-author"><span>${sender}</span> ${tagHtml}</div>${text}`;
+      
       chatMessages.appendChild(msgDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -647,7 +828,7 @@
       if (saved) {
         const history = JSON.parse(saved);
         chatMessages.innerHTML = '';
-        history.forEach(msg => appendMessageToDOM(msg.sender, msg.text, msg.type));
+        history.forEach(msg => appendMessageToDOM(msg.sender, msg.text, msg.type, msg.isPrivate));
       }
     }
 
