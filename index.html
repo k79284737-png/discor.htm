@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ConnectRTC Pro - Suporte a Celular & WebRTC</title>
+  <title>ConnectRTC Pro - WebRTC, YouTube & Suporte Móbile</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
@@ -16,6 +17,7 @@
       --success: #10b981;
       --danger: #ef4444;
       --warning: #f59e0b;
+      --youtube: #ff0000;
       --text: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -78,7 +80,7 @@
 
     .controls-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 12px;
       padding: 15px;
     }
@@ -117,15 +119,27 @@
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-youtube { background: var(--youtube); color: white; }
     .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text); border: 1px solid var(--glass-border); }
     .btn-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); }
     .btn-danger { background: var(--danger); color: white; }
 
     .main-layout { display: grid; grid-template-columns: 1fr 350px; gap: 15px; }
 
+    .video-section { display: flex; flex-direction: column; gap: 15px; }
+
+    .youtube-container {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--glass-border);
+      background: #000;
+    }
+
     .video-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 15px;
       align-content: start;
       position: relative;
@@ -175,7 +189,7 @@
       100% { opacity: 0; transform: translateY(-250px) scale(1.5); }
     }
 
-    .chat-panel { display: flex; flex-direction: column; height: 100%; min-height: 480px; max-height: 580px; padding: 15px; }
+    .chat-panel { display: flex; flex-direction: column; height: 100%; min-height: 480px; max-height: 650px; padding: 15px; }
     .chat-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; }
     
     .chat-target-selector {
@@ -224,7 +238,7 @@
 
     @media (max-width: 900px) {
       .main-layout { grid-template-columns: 1fr; }
-      .chat-panel { height: 360px; }
+      .chat-panel { height: 380px; }
       .input-group { flex-direction: column; }
       .btn { width: 100%; }
     }
@@ -285,7 +299,18 @@
         </div>
       </div>
 
-      <!-- 4. Compartilhar Tela -->
+      <!-- 4. Assistir YouTube Juntos -->
+      <div class="control-card">
+        <label><i class="fa-brands fa-youtube"></i> YouTube Watch Party</label>
+        <div class="input-group">
+          <input type="text" id="youtube-url-input" placeholder="Cole o link do vídeo..." />
+          <button class="btn btn-youtube" onclick="carregarECompartilharVideo()">
+            <i class="fa-solid fa-play"></i> Sincronizar
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. Compartilhar Tela -->
       <div class="control-card">
         <label><i class="fa-solid fa-desktop"></i> Transmissão</label>
         <button id="btn-screen" class="btn btn-secondary" onclick="toggleScreenShare()">
@@ -295,16 +320,22 @@
     </div>
 
     <div class="main-layout">
-      <!-- Grid de Vídeos -->
-      <div id="video-grid" class="video-grid">
-        <div class="video-card">
-          <div class="video-header"><i class="fa-solid fa-camera"></i> Minha Câmera</div>
-          <video id="localVideo" autoplay playsinline muted></video>
+      <!-- Seção de Mídia e Vídeos -->
+      <div class="video-section">
+        <div id="youtube-container" class="youtube-container" style="display: none;">
+          <div id="player"></div>
         </div>
 
-        <div class="video-card" id="screen-card" style="display: none;">
-          <div class="video-header"><i class="fa-solid fa-desktop"></i> Minha Tela</div>
-          <video id="localScreenVideo" autoplay playsinline muted></video>
+        <div id="video-grid" class="video-grid">
+          <div class="video-card">
+            <div class="video-header"><i class="fa-solid fa-camera"></i> Minha Câmera</div>
+            <video id="localVideo" autoplay playsinline muted></video>
+          </div>
+
+          <div class="video-card" id="screen-card" style="display: none;">
+            <div class="video-header"><i class="fa-solid fa-desktop"></i> Minha Tela</div>
+            <video id="localScreenVideo" autoplay playsinline muted></video>
+          </div>
         </div>
       </div>
 
@@ -317,7 +348,6 @@
           </button>
         </div>
 
-        <!-- Seletor Grupo vs Privado -->
         <div class="chat-target-selector">
           <label><i class="fa-solid fa-paper-plane"></i> Enviar para:</label>
           <select id="chat-target-select">
@@ -325,12 +355,10 @@
           </select>
         </div>
 
-        <!-- Mensagens -->
         <div id="chat-messages" class="chat-messages"></div>
 
         <div id="typing-indicator" class="typing-indicator"></div>
 
-        <!-- Reações rápidas -->
         <div class="reactions-bar">
           <button class="btn-emoji" onclick="sendEmoji('👍')">👍</button>
           <button class="btn-emoji" onclick="sendEmoji('❤️')">❤️</button>
@@ -346,7 +374,6 @@
       </div>
     </div>
 
-    <!-- Controles de Mídia Extra -->
     <div class="media-actions glass-panel">
       <button id="toggle-mic-btn" class="btn btn-secondary btn-icon" onclick="toggleAudio()" title="Mutar Microfone">
         <i class="fa-solid fa-microphone"></i>
@@ -371,6 +398,9 @@
     let videoEnabled = true;
     let typingTimeout = null;
 
+    let ytPlayer = null;
+    let isRemoteAction = false;
+
     const calls = {};      
     const dataConns = {};  
     const roomMembers = new Set();
@@ -382,6 +412,20 @@
     const chatMessages = document.getElementById('chat-messages');
     const chatTargetSelect = document.getElementById('chat-target-select');
     const typingIndicator = document.getElementById('typing-indicator');
+
+    // Configuração de Servidores STUN públicos para atravessar o CGNAT/Firewall do 4G/5G
+    const rtcConfiguration = {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+      }
+    };
 
     function formatarId(texto) {
       return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
@@ -399,7 +443,50 @@
       }
     });
 
-    // Detecta compatibilidade ao carregar
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
+        events: {
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    function getYouTubeId(url) {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    function carregarECompartilharVideo() {
+      const url = document.getElementById('youtube-url-input').value;
+      const videoId = getYouTubeId(url);
+
+      if (!videoId) return alert('Link do YouTube inválido!');
+
+      document.getElementById('youtube-container').style.display = 'block';
+      ytPlayer.loadVideoById(videoId);
+
+      enviarComandoVideo({ type: 'YT_LOAD', videoId: videoId });
+    }
+
+    function onPlayerStateChange(event) {
+      if (isRemoteAction) return;
+
+      if (event.data === YT.PlayerState.PLAYING) {
+        enviarComandoVideo({ type: 'YT_PLAY', time: ytPlayer.getCurrentTime() });
+      } else if (event.data === YT.PlayerState.PAUSED) {
+        enviarComandoVideo({ type: 'YT_PAUSE', time: ytPlayer.getCurrentTime() });
+      }
+    }
+
+    function enviarComandoVideo(data) {
+      Object.values(dataConns).forEach(conn => {
+        conn.send(data);
+      });
+    }
+
     function checkScreenShareSupport() {
       const btnScreen = document.getElementById('btn-screen');
       const isSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
@@ -414,8 +501,10 @@
 
     async function initCamera() {
       try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localVideo.srcObject = localStream;
+        if (!localStream) {
+          localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          localVideo.srcObject = localStream;
+        }
       } catch (err) {
         console.warn('Câmera/Microfone indisponíveis:', err);
       }
@@ -433,7 +522,9 @@
       if (peer) peer.destroy();
 
       statusText.innerText = "Conectando ao servidor...";
-      peer = new Peer(myUsername);
+      
+      // Inicialização do Peer com STUN para rede móvel
+      peer = new Peer(myUsername, rtcConfiguration);
 
       peer.on('open', (id) => {
         statusText.innerHTML = `Logado como: <strong>${id}</strong>`;
@@ -455,7 +546,13 @@
         }
       });
 
-      peer.on('call', (call) => {
+      // Atendimento resiliente de chamadas
+      peer.on('call', async (call) => {
+        // Assegura que o fluxo da câmera do celular exista antes de atender
+        if (!localStream) {
+          await initCamera();
+        }
+
         call.answer(localStream);
         setupCall(call);
 
@@ -493,12 +590,14 @@
       updateChatTargets();
     }
 
-    function ligarParaUsuario() {
+    async function ligarParaUsuario() {
       if (!peer || !myUsername) return alert('Faça login primeiro.');
 
       const targetUser = formatarId(document.getElementById('direct-user-input').value);
       if (!targetUser) return alert('Digite o nome do usuário.');
       if (targetUser === myUsername) return alert('Você não pode ligar para si mesmo.');
+
+      if (!localStream) await initCamera();
 
       const call = peer.call(targetUser, localStream);
       setupCall(call);
@@ -540,7 +639,7 @@
 
     function iniciarHostDaSala(hostId) {
       if (hostPeer) hostPeer.destroy();
-      hostPeer = new Peer(hostId);
+      hostPeer = new Peer(hostId, rtcConfiguration);
 
       roomMembers.clear();
       roomMembers.add(myUsername);
@@ -561,8 +660,10 @@
       });
     }
 
-    function conectarAoParticipante(remotePeerId) {
+    async function conectarAoParticipante(remotePeerId) {
       if (calls[remotePeerId]) return;
+
+      if (!localStream) await initCamera();
 
       const call = peer.call(remotePeerId, localStream);
       setupCall(call);
@@ -603,6 +704,21 @@
           showTypingIndicator(data.sender);
         } else if (data.type === 'NEW_MEMBER') {
           conectarAoParticipante(data.peerId);
+        } else if (data.type === 'YT_LOAD') {
+          document.getElementById('youtube-container').style.display = 'block';
+          isRemoteAction = true;
+          ytPlayer.loadVideoById(data.videoId);
+          setTimeout(() => isRemoteAction = false, 1000);
+        } else if (data.type === 'YT_PLAY') {
+          isRemoteAction = true;
+          ytPlayer.seekTo(data.time, true);
+          ytPlayer.playVideo();
+          setTimeout(() => isRemoteAction = false, 1000);
+        } else if (data.type === 'YT_PAUSE') {
+          isRemoteAction = true;
+          ytPlayer.seekTo(data.time, true);
+          ytPlayer.pauseVideo();
+          setTimeout(() => isRemoteAction = false, 1000);
         }
       });
 
@@ -628,7 +744,6 @@
       }
     }
 
-    // COMPARTILHAMENTO DE TELA ADAPTADO PARA MÓBILE E DESKTOP
     async function toggleScreenShare() {
       if (screenStream) {
         stopScreenShare();
@@ -647,7 +762,6 @@
       }
 
       try {
-        // Tenta capturar com fallback para navegadores móbiles
         try {
           screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
         } catch (e) {
@@ -767,6 +881,9 @@
       }
       const vid = document.getElementById(`video-${peerId}`);
       vid.srcObject = stream;
+      
+      // Tratamento para reprodução automática em navegadores móbiles
+      vid.play().catch(e => console.warn('Autoplay bloqueado pelo navegador:', e));
     }
 
     function removerVideoRemoto(peerId) {
